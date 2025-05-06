@@ -111,5 +111,4 @@ export const choice = <C extends Record<string, Effect.Effect<any, any, any>>>(
     })
   );
 
-export const quit = Effect.sync(() => process.exit(0));
 export const clearScreen = Effect.sync(console.clear);

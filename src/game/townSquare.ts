@@ -1,10 +1,14 @@
-import { Effect } from "effect";
-import { choice, clearScreen, display, newLine, quit } from "./display.ts";
-import { Player, PlayerDeadException, stats } from "./player.ts";
+import { Terminal } from "@effect/platform/Terminal";
+import { Data, Effect } from "effect";
+import { choice, clearScreen, display, newLine } from "./display.ts";
 import { Forest } from "./forest.ts";
 import { Healer } from "./healer.ts";
 import { Inn } from "./inn.ts";
-import { Terminal } from "@effect/platform/Terminal";
+import { Player, PlayerDeadException, stats } from "./player.ts";
+
+export class QuitTownSquareException extends Data.TaggedError(
+  "QuitTownSquareException"
+) {}
 
 export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
   effect: Effect.gen(function* () {
@@ -24,7 +28,7 @@ const townSquareIntro = Effect.zipRight(
 
 const townSquare: Effect.Effect<
   void,
-  void | PlayerDeadException,
+  void | PlayerDeadException | QuitTownSquareException,
   Terminal | Forest | Player | Healer | Inn
 > = Effect.gen(function* () {
   const forestService = yield* Forest;
@@ -62,7 +66,11 @@ const townSquare: Effect.Effect<
         townSquare,
       ]),
       s: stats.pipe(Effect.zipRight(townSquare)),
-      q: display`quitting...`.pipe(Effect.zipRight(quit)),
+      q: Effect.all([
+        display`quitting...`,
+        Effect.sleep(1000),
+        Effect.fail(new QuitTownSquareException()),
+      ]),
     },
     { defaultOption: "s" }
   );

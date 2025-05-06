@@ -26,6 +26,18 @@ const game: Effect.Effect<
 
   yield* townSquareService.townSquareIntro;
   yield* townSquareService.townSquare.pipe(
+    Effect.zipRight(
+      Effect.gen(function* () {
+        yield* newLine;
+        yield* display`Game finished`;
+        yield* newLine;
+        yield* display`-------------`;
+        yield* newLine;
+        yield* Effect.sleep(2000);
+
+        yield* game;
+      })
+    ),
     Effect.catchTags({
       PlayerDeadException: () =>
         Effect.gen(function* () {
@@ -33,19 +45,12 @@ const game: Effect.Effect<
           const maxHealth = yield* Player.maxHealth;
           yield* Player.updateHealth(() => maxHealth);
           yield* displayYield`You died, you lost your gold, the game will restart`;
+
           yield* game;
         }),
+      QuitTownSquareException: () => Effect.void,
     })
   );
-
-  yield* newLine;
-  yield* display`Game finished`;
-  yield* newLine;
-  yield* display`-------------`;
-  yield* newLine;
-  yield* Effect.sleep(2000);
-
-  yield* game;
 });
 
 const gameSetup = Effect.gen(function* () {
