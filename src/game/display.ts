@@ -29,74 +29,87 @@ export const displayLines = (
     .replace(/\n?$/, "\n");
 };
 
-export const display = Effect.fn("display")(function* (
+export const display = function (
   s: string | TemplateStringsArray,
   ...args: any[]
 ) {
-  const terminal = yield* Terminal.Terminal;
-  yield* terminal.display(displayLines(s, ...args));
-});
+  return Effect.orDie(
+    Effect.gen(function* () {
+      const terminal = yield* Terminal.Terminal;
+      yield* terminal.display(displayLines(s, ...args));
+    })
+  );
+};
 
-export const displayYield = Effect.fn("displayYield")(function* (
+export const displayYield = function (
   s?: string | TemplateStringsArray,
   ...args: any[]
 ) {
-  const terminal = yield* Terminal.Terminal;
+  return Effect.orDie(
+    Effect.gen(function* () {
+      const terminal = yield* Terminal.Terminal;
 
-  if (s !== undefined) {
-    yield* display(s, ...args);
-  }
+      if (s !== undefined) {
+        yield* display(s, ...args);
+      }
 
-  yield* display(`Press <ENTER> to continue`);
-  while (true) {
-    const input = yield* terminal.readInput;
+      yield* display(`Press <ENTER> to continue`);
 
-    if (input.key.name === "return") {
-      break;
-    }
-  }
-});
+      while (true) {
+        const input = yield* terminal.readInput;
+
+        if (input.key.name === "return") {
+          break;
+        }
+      }
+    })
+  );
+};
 
 export const newLine = display``;
 
-export const choice = <
-  A,
-  E,
-  R,
-  C extends Record<string, Effect.Effect<A, E, R>>
->(
-  choices: C
-) =>
-  Effect.fn("choice")(function* (
-    opts: {
-      defaultOption?: keyof C & string;
-      promptPrefix?: string;
-    } = {}
-  ) {
-    const terminal = yield* Terminal.Terminal;
+type Values<T> = T[keyof T];
 
-    let input: string = "";
+export const choice = <C extends Record<string, Effect.Effect<any, any, any>>>(
+  choices: C,
+  opts: {
+    defaultOption?: keyof C & string;
+    promptPrefix?: string;
+  } = {}
+): Effect.Effect<
+  Effect.Effect.Success<Values<C>>,
+  Effect.Effect.Error<Values<C>>,
+  Effect.Effect.Context<Values<C>> | Terminal.Terminal
+> =>
+  Effect.orDie(
+    Effect.gen(function* () {
+      const terminal = yield* Terminal.Terminal;
 
-    const prompt = display`${
-      opts.promptPrefix ?? "Enter an option"
-    } [${Object.keys(choices)
-      .map((c) => c.toUpperCase())
-      .join(",")}]: ${
-      opts.defaultOption ? `(${opts.defaultOption.toUpperCase()})` : ""
-    }`;
+      let input: string = "";
 
-    while (!(input in choices)) {
-      yield* prompt;
-      yield* newLine;
-      input = (yield* terminal.readInput).key.name.toLowerCase();
+      const prompt = display`${
+        opts.promptPrefix ?? "Enter an option"
+      } [${Object.keys(choices)
+        .map((c) => c.toUpperCase())
+        .join(",")}]: ${
+        opts.defaultOption ? `(${opts.defaultOption.toUpperCase()})` : ""
+      }`;
 
-      if (input === "return") {
-        input = opts.defaultOption ?? "";
+      while (!(input in choices)) {
+        yield* prompt;
+        yield* newLine;
+        input = (yield* terminal.readInput).key.name.toLowerCase();
+
+        if (input === "return") {
+          input = opts.defaultOption ?? "";
+        }
       }
-    }
 
-    return yield* choices[input];
-  });
+      const result = yield* choices[input];
+
+      return result;
+    })
+  );
 
 export const quit = Effect.sync(() => process.exit(0));
 export const clearScreen = Effect.sync(console.clear);

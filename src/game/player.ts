@@ -1,7 +1,7 @@
-import { Effect, Ref } from "effect";
+import { Data, Effect, Ref } from "effect";
 import { display, newLine } from "./display.ts";
 
-const weapons = { stick: 2, dagger: 5 };
+export const weapons = { stick: 2, dagger: 5 };
 type Weapon = keyof typeof weapons;
 
 type Eq = { weapon: Weapon };
@@ -84,10 +84,21 @@ export class Player extends Effect.Service<Player>()("Player", {
   static isAlive = Effect.map(this.data, (d) => d.health > 0);
   static maxHealth = Effect.map(this.data, (d) => maxHealth(lvlByExp(d.exp)));
   static updateHealth = (fn: (o: number) => number) =>
-    this.use((d) => Ref.update(d, (o) => ({ ...o, health: fn(o.health) })));
+    this.use((d) =>
+      Ref.modify(d, (o) => [fn(o.health), { ...o, health: fn(o.health) }])
+    );
+
+  static decreaseHealth = (dmg: number) =>
+    this.updateHealth((h) => h - dmg).pipe(
+      Effect.filterOrFail((h) => h > 0),
+      () => new PlayerDeadException({ reason: "Dealt damage" })
+    );
+
+  static increaseHealth = (health: number) =>
+    this.updateHealth((h) => h + health);
 }
 
-export const stats = Effect.fn("stats")(function* () {
+export const stats = Effect.gen(function* () {
   yield* display`--------------------------------`;
   yield* display`${yield* Player.name}'s stats:`;
   yield* display`--------------------------------`;
@@ -106,3 +117,9 @@ export const stats = Effect.fn("stats")(function* () {
 
   yield* newLine;
 });
+
+export class PlayerDeadException extends Data.TaggedError(
+  "PlayerDeadException"
+)<{
+  reason: string;
+}> {}

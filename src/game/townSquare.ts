@@ -1,16 +1,31 @@
 import { Effect } from "effect";
 import { choice, clearScreen, display, newLine, quit } from "./display.ts";
 import { stats } from "./player.ts";
-import { forest } from "./forest.ts";
+import { Forest } from "./forest.ts";
+import { Healer } from "./healer.ts";
+import { Inn } from "./inn.ts";
 
-export const townSquareIntro = Effect.zipRight(
+export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
+  effect: Effect.gen(function* () {
+    return {
+      townSquareIntro,
+      townSquare,
+    };
+  }),
+}) {}
+
+const townSquareIntro = Effect.zipRight(
   display`
   Welcome to the Town Square, where do you want to go?
   `,
   newLine
 );
 
-const townSquare = Effect.fn("townSquare")(function* (): any {
+const townSquare = Effect.gen(function* () {
+  const forestService = yield* Forest;
+  const healerService = yield* Healer;
+  const innService = yield* Inn;
+
   yield* display`
   [F] Go to the forest
   [W] Swords and armours
@@ -21,16 +36,30 @@ const townSquare = Effect.fn("townSquare")(function* (): any {
   [Q] Quit the game`;
   yield* newLine;
 
-  yield* choice({
-    f: clearScreen.pipe(
-      Effect.zipRight(forestIntro),
-      Effect.zipRight(forest())
-    ),
-    w: display`shop`.pipe(Effect.zipRight(townSquare())),
-    b: display`bank`.pipe(Effect.zipRight(townSquare())),
-    h: Effect.all([clearScreen, healerIntro, healer(), townSquare()]),
-    i: Effect.all([clearScreen, innIntro, inn(), townSquare()]),
-    s: stats().pipe(Effect.zipRight(townSquare())),
-    q: display`quitting...`.pipe(Effect.zipRight(quit)),
-  })({ defaultOption: "s" });
+  yield* choice(
+    {
+      f: clearScreen.pipe(
+        Effect.zipRight(forestService.forestIntro),
+        Effect.zipRight(forestService.forest)
+      ),
+      w: display`shop`,
+      b: display`bank`,
+      h: Effect.all([
+        clearScreen,
+        healerService.healerIntro,
+        healerService.healer,
+        // townSquare(),
+      ]),
+      i: Effect.all([
+        clearScreen,
+        innService.innIntro,
+        innService.inn(),
+        // townSquare(),
+      ]),
+      // s: stats().pipe(Effect.zipRight(townSquare())),
+      s: display`town square`,
+      q: display`quitting...`.pipe(Effect.zipRight(quit)),
+    },
+    { defaultOption: "s" }
+  );
 });

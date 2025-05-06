@@ -1,23 +1,24 @@
 import { Terminal } from "@effect/platform";
-import { Effect, Random, Ref, Schema } from "effect";
+import { Effect, Ref, Schema } from "effect";
 import {
-  display,
-  displayLines,
-  newLine,
   choice,
-  displayYield,
   clearScreen,
-  quit,
+  display,
+  displayYield,
+  newLine,
 } from "./game/display.ts";
 import { Player } from "./game/player.ts";
+import { TownSquare } from "./game/townSquare.ts";
 
 const game = Effect.gen(function* (): any {
+  const townSquareService = yield* TownSquare;
+
   yield* clearScreen;
   yield* display`Game started`;
   yield* newLine;
 
-  yield* townSquareIntro;
-  yield* townSquare();
+  yield* townSquareService.townSquareIntro;
+  yield* townSquareService.townSquare;
 
   yield* newLine;
   yield* display`Game finished`;
@@ -77,10 +78,11 @@ const gameSetup = Effect.gen(function* () {
     a: Ref.update(ref, (data) => ({ ...data, class: "assassin" as const })),
     w: Ref.update(ref, (data) => ({ ...data, class: "warrior" as const })),
     r: Ref.update(ref, (data) => ({ ...data, class: "archer" as const })),
-  })();
+  });
 });
 
 export const runGame = gameSetup.pipe(
   Effect.zipRight(game),
-  Effect.provide(Player.Default)
+  Effect.provide(Player.Default),
+  Effect.provide(TownSquare.Default)
 ) as Effect.Effect<void, never, never>;
