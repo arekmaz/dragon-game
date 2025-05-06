@@ -46,6 +46,8 @@ const game: Effect.Effect<
           yield* Player.updateHealth(() => maxHealth);
           yield* displayYield`You died, you lost your gold, the game will restart`;
 
+          yield* Effect.sleep(2000);
+
           yield* game;
         }),
       QuitTownSquareException: () => Effect.void,

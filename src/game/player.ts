@@ -90,8 +90,10 @@ export class Player extends Effect.Service<Player>()("Player", {
 
   static decreaseHealth = (dmg: number) =>
     this.updateHealth((h) => h - dmg).pipe(
-      Effect.filterOrFail((h) => h > 0),
-      () => new PlayerDeadException({ reason: "Dealt damage" })
+      Effect.filterOrFail(
+        (h) => h > 0,
+        () => new PlayerDeadException({ reason: "Dealt damage" })
+      )
     );
 
   static increaseHealth = (health: number) =>

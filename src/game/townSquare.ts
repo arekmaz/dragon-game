@@ -47,12 +47,14 @@ const townSquare: Effect.Effect<
 
   yield* choice(
     {
-      f: clearScreen.pipe(
-        Effect.zipRight(forestService.forestIntro),
-        Effect.zipRight(forestService.forest)
-      ),
-      w: display`shop`,
-      b: display`bank`,
+      f: Effect.all([
+        clearScreen,
+        forestService.forestIntro,
+        forestService.forest,
+        townSquare,
+      ]),
+      w: Effect.all([clearScreen, display`shop`, townSquare]),
+      b: Effect.all([clearScreen, display`bank`, townSquare]),
       h: Effect.all([
         clearScreen,
         healerService.healerIntro,
@@ -65,7 +67,7 @@ const townSquare: Effect.Effect<
         innService.inn,
         townSquare,
       ]),
-      s: stats.pipe(Effect.zipRight(townSquare)),
+      s: Effect.all([stats, townSquare]),
       q: Effect.all([
         display`quitting...`,
         Effect.sleep(1000),

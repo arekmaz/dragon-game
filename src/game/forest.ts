@@ -32,8 +32,8 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
         yield* choice(
           {
-            l: fight,
-            s: stats.pipe(Effect.zipRight(forest)),
+            l: Effect.all([fight, forestBackMsg, forest]),
+            s: Effect.all([stats, forest]),
             r: Effect.void,
           },
           { defaultOption: "s" }
@@ -81,7 +81,6 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       ${yield* Player.name}: ${yield* Player.health}/${yield* Player.maxHealth}
       ${opponent.name}: ${yield* opRef}/${opponent.maxHealth}`;
         });
-        const continueAfter = Effect.all([clearScreen, forestBackMsg, forest]);
 
         yield* clearScreen;
 
@@ -141,8 +140,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
                 ),
                 Effect.flatMap(
                   (lost) => display`You escape, losing ${lost} gold`
-                ),
-                Effect.zipRight(continueAfter)
+                )
               ),
             },
             { defaultOption: "s" }
@@ -170,11 +168,8 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
           yield* newLine;
           yield* displayYield();
         }
-
-        // yield* restartGameIfPlayerIsDead;
-
-        yield* continueAfter;
       });
+
     return {
       forestIntro,
       forestBackMsg,
