@@ -49,13 +49,12 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
 
       yield* choice(
         {
-          f: Effect.all([
-            clearScreen,
-            forestService.forestIntro,
-            forestService.forest,
-            backToTownSquare,
-            townSquare,
-          ]),
+          f: clearScreen.pipe(
+            Effect.zipRight(forestService.forestIntro),
+            Effect.zipRight(forestService.forest),
+            Effect.zipRight(backToTownSquare),
+            Effect.zipRight(townSquare)
+          ),
           w: Effect.all([
             clearScreen,
             display`shop`,

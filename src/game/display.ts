@@ -49,11 +49,7 @@ export class Display extends Effect.Service<Display>()("Display", {
       s: string | TemplateStringsArray,
       ...args: any[]
     ) {
-      return Effect.orDie(
-        Effect.gen(function* () {
-          yield* displayRaw(displayLines(s, ...args));
-        })
-      );
+      return displayRaw(displayLines(s, ...args));
     };
 
     const displayYield = function (
@@ -62,8 +58,6 @@ export class Display extends Effect.Service<Display>()("Display", {
     ) {
       return Effect.orDie(
         Effect.gen(function* () {
-          const terminal = yield* Terminal.Terminal;
-
           if (s !== undefined) {
             yield* display(s, ...args);
           }
@@ -96,41 +90,37 @@ export class Display extends Effect.Service<Display>()("Display", {
       Effect.Effect.Error<Values<C>>,
       Effect.Effect.Context<Values<C>> | Terminal.Terminal
     > =>
-      Effect.orDie(
-        Effect.gen(function* () {
-          const terminal = yield* Terminal.Terminal;
+      Effect.gen(function* () {
+        let input: string = "";
 
-          let input: string = "";
+        const prompt = displayRaw`${
+          opts.promptPrefix ?? "Enter an option"
+        } [${Object.keys(choices)
+          .map((c) => c.toUpperCase())
+          .join(",")}]: ${
+          opts.defaultOption ? `(${opts.defaultOption.toUpperCase()})` : ""
+        }`;
 
-          const prompt = displayRaw`${
-            opts.promptPrefix ?? "Enter an option"
-          } [${Object.keys(choices)
-            .map((c) => c.toUpperCase())
-            .join(",")}]: ${
-            opts.defaultOption ? `(${opts.defaultOption.toUpperCase()})` : ""
-          }`;
+        while (!(input in choices)) {
+          yield* prompt;
+          input = (yield* terminal.readInput).key.name.toLowerCase();
 
-          while (!(input in choices)) {
-            yield* prompt;
-            input = (yield* terminal.readInput).key.name.toLowerCase();
-
-            if (input === "return") {
-              input = opts.defaultOption ?? "";
-            }
-
-            if (input in choices) {
-              continue;
-            }
+          if (input === "return") {
+            input = opts.defaultOption ?? "";
           }
 
-          yield* displayRaw` ${input} `;
-          yield* newLine;
+          if (input in choices) {
+            continue;
+          }
+        }
 
-          const result = yield* choices[input];
+        yield* displayRaw` ${input} `;
+        yield* newLine;
 
-          return result;
-        })
-      );
+        const result = yield* choices[input];
+
+        return result;
+      });
 
     const clearScreen = Effect.sync(console.clear);
 

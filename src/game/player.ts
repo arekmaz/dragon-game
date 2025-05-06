@@ -125,7 +125,7 @@ export class Player extends Effect.Service<Player>()("Player", {
     this.updateHealth((h) => h + health);
 }
 
-export class PlayerDeadException extends Data.TaggedError(
+export class PlayerDeadException extends Data.TaggedClass(
   "PlayerDeadException"
 )<{
   reason: string;

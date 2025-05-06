@@ -29,7 +29,7 @@
     "@effect/platform": "latest",
     "@effect/platform-node": "latest",
     "@effect/vitest": "latest",
-    "@types/node": "^22.5.2",
+    "@types/node": "^22.15.14",
     "effect": "latest",
     "tsup": "^8.2.4",
     "tsx": "^4.19.1",
