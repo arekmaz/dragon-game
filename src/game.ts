@@ -94,8 +94,8 @@ const gameSetup = Effect.gen(function* () {
   });
 });
 
-export const runGame = gameSetup.pipe(
-  Effect.zipRight(game),
+export const runGame = Effect.all([clearScreen, gameSetup, game]).pipe(
+  Effect.asVoid,
   Effect.provide(Player.Default),
   Effect.provide(TownSquare.Default),
   Effect.provide(Forest.Default),

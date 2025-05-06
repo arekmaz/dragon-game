@@ -14,6 +14,7 @@
     "directory": "dist"
   },
   "scripts": {
+    "start": "node --experimental-strip-types src/bin.ts",
     "build": "tsup && pnpm copy-package-json",
     "build:ts": "tsup",
     "clean": "rimraf dist/*",
