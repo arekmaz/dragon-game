@@ -1,23 +1,19 @@
 import { Terminal } from "@effect/platform";
 import { Effect, Ref, Schema } from "effect";
-import {
-  choice,
-  clearScreen,
-  display,
-  displayYield,
-  newLine,
-} from "./game/display.ts";
 import { Player } from "./game/player.ts";
 import { TownSquare } from "./game/townSquare.ts";
 import { Forest } from "./game/forest.ts";
 import { Healer } from "./game/healer.ts";
 import { Inn } from "./game/inn.ts";
+import { Display } from "./game/display.ts";
 
 const game: Effect.Effect<
   void,
   void,
-  TownSquare | Terminal.Terminal | Forest | Player | Healer | Inn
+  TownSquare | Terminal.Terminal | Forest | Player | Healer | Inn | Display
 > = Effect.gen(function* () {
+  const { display, newLine, clearScreen, displayYield } = yield* Display;
+
   const townSquareService = yield* TownSquare;
 
   yield* clearScreen;
@@ -56,6 +52,8 @@ const game: Effect.Effect<
 });
 
 const gameSetup = Effect.gen(function* () {
+  const { display, newLine, choice } = yield* Display;
+
   const terminal = yield* Terminal.Terminal;
   const ref = yield* Player;
 
@@ -75,7 +73,7 @@ const gameSetup = Effect.gen(function* () {
     );
 
   const userName = yield* readName;
-  yield* Ref.update(ref, (data) => ({ ...data, name: userName }));
+  yield* Ref.update(ref.data, (data) => ({ ...data, name: userName }));
 
   yield* newLine;
 
@@ -89,18 +87,22 @@ const gameSetup = Effect.gen(function* () {
       [R] archer`;
 
   yield* choice({
-    m: Ref.update(ref, (data) => ({ ...data, class: "mage" as const })),
-    a: Ref.update(ref, (data) => ({ ...data, class: "assassin" as const })),
-    w: Ref.update(ref, (data) => ({ ...data, class: "warrior" as const })),
-    r: Ref.update(ref, (data) => ({ ...data, class: "archer" as const })),
+    m: Ref.update(ref.data, (data) => ({ ...data, class: "mage" as const })),
+    a: Ref.update(ref.data, (data) => ({
+      ...data,
+      class: "assassin" as const,
+    })),
+    w: Ref.update(ref.data, (data) => ({ ...data, class: "warrior" as const })),
+    r: Ref.update(ref.data, (data) => ({ ...data, class: "archer" as const })),
   });
 });
 
-export const runGame = Effect.all([clearScreen, gameSetup, game]).pipe(
+export const runGame = Effect.all([gameSetup, game]).pipe(
   Effect.asVoid,
   Effect.provide(Player.Default),
   Effect.provide(TownSquare.Default),
   Effect.provide(Forest.Default),
   Effect.provide(Healer.Default),
-  Effect.provide(Inn.Default)
+  Effect.provide(Inn.Default),
+  Effect.provide(Display.Default)
 ) as Effect.Effect<void, never, never>;
