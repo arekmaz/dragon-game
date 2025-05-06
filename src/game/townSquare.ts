@@ -1,9 +1,10 @@
 import { Effect } from "effect";
 import { choice, clearScreen, display, newLine, quit } from "./display.ts";
-import { stats } from "./player.ts";
+import { Player, PlayerDeadException, stats } from "./player.ts";
 import { Forest } from "./forest.ts";
 import { Healer } from "./healer.ts";
 import { Inn } from "./inn.ts";
+import { Terminal } from "@effect/platform/Terminal";
 
 export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
   effect: Effect.gen(function* () {
@@ -21,7 +22,11 @@ const townSquareIntro = Effect.zipRight(
   newLine
 );
 
-const townSquare = Effect.gen(function* () {
+const townSquare: Effect.Effect<
+  void,
+  void | PlayerDeadException,
+  Terminal | Forest | Player | Healer | Inn
+> = Effect.gen(function* () {
   const forestService = yield* Forest;
   const healerService = yield* Healer;
   const innService = yield* Inn;
@@ -48,16 +53,15 @@ const townSquare = Effect.gen(function* () {
         clearScreen,
         healerService.healerIntro,
         healerService.healer,
-        // townSquare(),
+        townSquare,
       ]),
       i: Effect.all([
         clearScreen,
         innService.innIntro,
-        innService.inn(),
-        // townSquare(),
+        innService.inn,
+        townSquare,
       ]),
-      // s: stats().pipe(Effect.zipRight(townSquare())),
-      s: display`town square`,
+      s: stats.pipe(Effect.zipRight(townSquare)),
       q: display`quitting...`.pipe(Effect.zipRight(quit)),
     },
     { defaultOption: "s" }

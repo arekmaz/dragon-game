@@ -9,8 +9,15 @@ import {
 } from "./game/display.ts";
 import { Player } from "./game/player.ts";
 import { TownSquare } from "./game/townSquare.ts";
+import { Forest } from "./game/forest.ts";
+import { Healer } from "./game/healer.ts";
+import { Inn } from "./game/inn.ts";
 
-const game = Effect.gen(function* (): any {
+const game: Effect.Effect<
+  void,
+  void,
+  TownSquare | Terminal.Terminal | Forest | Player | Healer | Inn
+> = Effect.gen(function* () {
   const townSquareService = yield* TownSquare;
 
   yield* clearScreen;
@@ -18,7 +25,18 @@ const game = Effect.gen(function* (): any {
   yield* newLine;
 
   yield* townSquareService.townSquareIntro;
-  yield* townSquareService.townSquare;
+  yield* townSquareService.townSquare.pipe(
+    Effect.catchTags({
+      PlayerDeadException: () =>
+        Effect.gen(function* () {
+          yield* Player.updateGold(() => 0);
+          const maxHealth = yield* Player.maxHealth;
+          yield* Player.updateHealth(() => maxHealth);
+          yield* displayYield`You died, you lost your gold, the game will restart`;
+          yield* game;
+        }),
+    })
+  );
 
   yield* newLine;
   yield* display`Game finished`;
@@ -27,18 +45,6 @@ const game = Effect.gen(function* (): any {
   yield* newLine;
   yield* Effect.sleep(2000);
 
-  yield* game;
-});
-
-const restartGameIfPlayerIsDead = Effect.gen(function* () {
-  if (yield* Player.isAlive) {
-    return;
-  }
-
-  yield* Player.updateGold(() => 0);
-  const maxHealth = yield* Player.maxHealth;
-  yield* Player.updateHealth(() => maxHealth);
-  yield* displayYield`You died, you lost your gold, the game will restart`;
   yield* game;
 });
 
@@ -84,5 +90,8 @@ const gameSetup = Effect.gen(function* () {
 export const runGame = gameSetup.pipe(
   Effect.zipRight(game),
   Effect.provide(Player.Default),
-  Effect.provide(TownSquare.Default)
+  Effect.provide(TownSquare.Default),
+  Effect.provide(Forest.Default),
+  Effect.provide(Healer.Default),
+  Effect.provide(Inn.Default)
 ) as Effect.Effect<void, never, never>;
