@@ -119,6 +119,9 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
             {
               a: Effect.gen(function* () {
                 const dmg = yield* playerStrike;
+
+                yield* newLine;
+
                 yield* display`You strike ${k.red(
                   opponent.name
                 )}, dealing ${k.red(dmg)} damage.`;

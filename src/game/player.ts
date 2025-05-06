@@ -6,7 +6,8 @@ type Weapon = keyof typeof weapons;
 
 type Eq = { weapon: Weapon };
 
-type PlayerClass = "mage" | "assassin" | "warrior" | "archer";
+export const playerClasses = ["mage", "assassin", "warrior", "archer"] as const;
+type PlayerClass = (typeof playerClasses)[number];
 
 const maxHealth = (level: number) => 20 + (level - 1) * 2;
 

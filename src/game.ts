@@ -1,6 +1,6 @@
 import { Terminal } from "@effect/platform";
 import { Effect, Ref, Schema } from "effect";
-import { Player } from "./game/player.ts";
+import { Player, playerClasses } from "./game/player.ts";
 import { TownSquare } from "./game/townSquare.ts";
 import { Forest } from "./game/forest.ts";
 import { Healer } from "./game/healer.ts";
@@ -52,32 +52,39 @@ const game: Effect.Effect<
 });
 
 const gameSetup = Effect.gen(function* () {
-  const { display, newLine, choice } = yield* Display;
+  const { display, newLine, choice, displayYield } = yield* Display;
 
   const terminal = yield* Terminal.Terminal;
   const ref = yield* Player;
 
   yield* display`Welcome to the dragon game`;
   yield* newLine;
-  yield* display`What's your name?`;
 
-  const readName: Effect.Effect<string, never, Terminal.Terminal> =
-    terminal.readLine.pipe(
-      Effect.flatMap(
-        Schema.decode(
-          Schema.Trim.pipe(Schema.nonEmptyString(), Schema.maxLength(100))
-        )
-      ),
-      Effect.tapError(() => display`Your name cannot be empty`),
-      Effect.orElse(() => readName)
-    );
-
-  const userName = yield* readName;
-  yield* Ref.update(ref.data, (data) => ({ ...data, name: userName }));
-
+  yield* display`Would you like to configure your character or quickly start the game?`;
   yield* newLine;
 
-  yield* display`
+  yield* choice(
+    {
+      c: Effect.gen(function* () {
+        yield* display`What's your name?`;
+
+        const readName: Effect.Effect<string, never, Terminal.Terminal> =
+          terminal.readLine.pipe(
+            Effect.flatMap(
+              Schema.decode(
+                Schema.Trim.pipe(Schema.nonEmptyString(), Schema.maxLength(100))
+              )
+            ),
+            Effect.tapError(() => display`Your name cannot be empty`),
+            Effect.orElse(() => readName)
+          );
+
+        const userName = yield* readName;
+        yield* Ref.update(ref.data, (data) => ({ ...data, name: userName }));
+
+        yield* newLine;
+
+        yield* display`
     Hello, ${userName}!
 
     What is your class?
@@ -86,15 +93,38 @@ const gameSetup = Effect.gen(function* () {
       [W] warrior
       [R] archer`;
 
-  yield* choice({
-    m: Ref.update(ref.data, (data) => ({ ...data, class: "mage" as const })),
-    a: Ref.update(ref.data, (data) => ({
-      ...data,
-      class: "assassin" as const,
-    })),
-    w: Ref.update(ref.data, (data) => ({ ...data, class: "warrior" as const })),
-    r: Ref.update(ref.data, (data) => ({ ...data, class: "archer" as const })),
-  });
+        yield* choice({
+          m: Ref.update(ref.data, (data) => ({
+            ...data,
+            class: "mage" as const,
+          })),
+          a: Ref.update(ref.data, (data) => ({
+            ...data,
+            class: "assassin" as const,
+          })),
+          w: Ref.update(ref.data, (data) => ({
+            ...data,
+            class: "warrior" as const,
+          })),
+          r: Ref.update(ref.data, (data) => ({
+            ...data,
+            class: "archer" as const,
+          })),
+        });
+      }),
+      r: Effect.gen(function* () {
+        yield* Ref.update(ref.data, (data) => ({
+          ...data,
+          name: "random-name",
+          class:
+            playerClasses[Math.floor(Math.random() * playerClasses.length)],
+        }));
+        yield* Player.use((s) => s.stats);
+        yield* displayYield();
+      }),
+    },
+    { defaultOption: "r" }
+  );
 });
 
 export const runGame = Effect.all([
