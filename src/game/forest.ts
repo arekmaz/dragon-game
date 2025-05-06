@@ -1,7 +1,7 @@
 import { Terminal } from "@effect/platform/Terminal";
 import { Effect, Random, Ref } from "effect";
 import { Display } from "./display.ts";
-import { Player, PlayerDeadException, stats, weapons } from "./player.ts";
+import { Player, PlayerDeadException, weapons } from "./player.ts";
 
 export class Forest extends Effect.Service<Forest>()("Forest", {
   effect: Effect.gen(function* () {
@@ -30,7 +30,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
         yield* choice(
           {
             l: Effect.all([fight, forestBackMsg, forest]),
-            s: Effect.all([stats, forest]),
+            s: Effect.all([Player.use((s) => s.stats), forest]),
             r: Effect.void,
           },
           { defaultOption: "s" }

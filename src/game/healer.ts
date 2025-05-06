@@ -1,17 +1,19 @@
 import { Terminal } from "@effect/platform";
 import { Effect, Ref, Schema } from "effect";
-import { choice, display, newLine } from "./display.ts";
-import { Player, stats } from "./player.ts";
+import { Display } from "./display.ts";
+import { Player } from "./player.ts";
 
 export class Healer extends Effect.Service<Healer>()("Healer", {
   effect: Effect.gen(function* () {
+    const { display, newLine, choice } = yield* Display;
+
     const healer: Effect.Effect<void, void, Terminal.Terminal | Player> =
       Effect.gen(function* () {
         const playerMaxHealth = yield* Player.maxHealth;
 
         const healFull = Player.pipe(
-          Effect.flatMap((ref) =>
-            Ref.modify(ref, (data) => {
+          Effect.flatMap(({ data }) =>
+            Ref.modify(data, (data) => {
               const healthToRestore = playerMaxHealth - data.health;
 
               if (data.gold >= healthToRestore * healthPointCost) {
@@ -102,7 +104,7 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
               ),
               Effect.zipRight(healer)
             ),
-            s: stats.pipe(Effect.zipRight(healer)),
+            s: Player.use((s) => s.stats).pipe(Effect.zipRight(healer)),
             r: Effect.void,
           },
           { defaultOption: "s" }
