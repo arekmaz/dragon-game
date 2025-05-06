@@ -1,7 +1,7 @@
 import { Command } from "@effect/cli";
-import { dragon } from "./dragon.ts";
+import { runGame } from "./game.ts";
 
-const command = Command.make("dragon", {}, () => dragon);
+const command = Command.make("dragon", {}, () => runGame);
 
 export const run = Command.run(command, {
   name: "Dragon Game",
