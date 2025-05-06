@@ -94,11 +94,11 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
                   (dmg) =>
                     display`It suprises you, dealing you ${k.red(dmg)} damage`
                 ),
-                Effect.catchAll(
+                Effect.tapError(
                   (e) =>
                     display`It suprises you, dealing you ${k.red(
                       e.amount
-                    )} damage, killing you`
+                    )} damage and killing you.`
                 )
               )
         )
@@ -132,7 +132,17 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
                 return;
               }
 
-              const opDmg = yield* opStrike;
+              const opDmg = yield* opStrike.pipe(
+                Effect.tapError(
+                  (e) =>
+                    display`${k.red(
+                      opponent.name
+                    )}, strikes you back, dealing ${k.red(
+                      e.amount
+                    )} damage and killing you.`
+                )
+              );
+
               yield* display`${k.red(
                 opponent.name
               )}, strikes you back, dealing ${k.red(opDmg)} damage.`;

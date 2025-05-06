@@ -112,6 +112,8 @@ export class Display extends Effect.Service<Display>()("Display", {
           if (input in choices) {
             continue;
           }
+
+          yield* newLine;
         }
 
         yield* displayRaw` ${input} `;
