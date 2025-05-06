@@ -26,6 +26,13 @@ const townSquareIntro = Effect.zipRight(
   newLine
 );
 
+const backToTownSquare = Effect.zipRight(
+  display`
+  Welcome to the Town Square, where do you want to go?
+  `,
+  newLine
+);
+
 const townSquare: Effect.Effect<
   void,
   void | PlayerDeadException | QuitTownSquareException,
@@ -51,20 +58,23 @@ const townSquare: Effect.Effect<
         clearScreen,
         forestService.forestIntro,
         forestService.forest,
+        backToTownSquare,
         townSquare,
       ]),
-      w: Effect.all([clearScreen, display`shop`, townSquare]),
-      b: Effect.all([clearScreen, display`bank`, townSquare]),
+      w: Effect.all([clearScreen, display`shop`, backToTownSquare, townSquare]),
+      b: Effect.all([clearScreen, display`bank`, backToTownSquare, townSquare]),
       h: Effect.all([
         clearScreen,
         healerService.healerIntro,
         healerService.healer,
+        backToTownSquare,
         townSquare,
       ]),
       i: Effect.all([
         clearScreen,
         innService.innIntro,
         innService.inn,
+        backToTownSquare,
         townSquare,
       ]),
       s: Effect.all([stats, townSquare]),
