@@ -97,7 +97,11 @@ const gameSetup = Effect.gen(function* () {
   });
 });
 
-export const runGame = Effect.all([gameSetup, game]).pipe(
+export const runGame = Effect.all([
+  Display.use((s) => s.clearScreen),
+  gameSetup,
+  game,
+]).pipe(
   Effect.asVoid,
   Effect.provide(Player.Default),
   Effect.provide(TownSquare.Default),

@@ -1,6 +1,6 @@
 import { Terminal } from "@effect/platform/Terminal";
 import { Effect, Random, Ref } from "effect";
-import { Display } from "./display.ts";
+import { Display, k } from "./display.ts";
 import { Player, PlayerDeadException, weapons } from "./player.ts";
 
 export class Forest extends Effect.Service<Forest>()("Forest", {
@@ -54,7 +54,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
         const opRef = yield* Ref.make(opponent.maxHealth);
 
-        const intro = display`You meet ${opponent.name}, power ${
+        const intro = display`You meet ${k.red(opponent.name)}, power ${
           opponent.power
         }, health: ${yield* opRef}/${opponent.maxHealth}`;
 
@@ -90,7 +90,9 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
               ? Effect.flatMap(
                   playerStrike,
                   (dmg) =>
-                    display`You manage to strike it first, dealing ${dmg} damage`
+                    display`You manage to strike it first, dealing ${k.red(
+                      dmg
+                    )} damage`
                 )
               : Effect.flatMap(
                   opStrike,
