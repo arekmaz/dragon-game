@@ -38,9 +38,16 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       });
 
     const fight = Effect.gen(function* () {
-      const randomOpponent = Random.nextIntBetween(0, opponents.length).pipe(
-        Effect.map((i) => opponents[i])
+      const lvl = yield* Player.level;
+
+      const opponentsMatchingPlayerLevel = opponents.filter(
+        (o) => o.minLevel <= lvl
       );
+
+      const randomOpponent = Random.nextIntBetween(
+        0,
+        opponentsMatchingPlayerLevel.length
+      ).pipe(Effect.map((i) => opponentsMatchingPlayerLevel[i]));
 
       const opponent = yield* randomOpponent;
 
@@ -49,8 +56,6 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       const intro = display`You meet ${k.red(opponent.name)}, power ${
         opponent.power
       }, health: ${yield* opRef}/${opponent.maxHealth}`;
-
-      const lvl = yield* Player.level;
 
       const playerStrike = Random.nextIntBetween(
         1,
@@ -186,105 +191,222 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
   dependencies: [Display.Default],
 }) {}
 
-const opponents: { name: string; power: number; maxHealth: number }[] = [
-  { name: "Small Goblin", power: 2, maxHealth: 5 },
-  { name: "Medium Goblin", power: 3, maxHealth: 7 },
-  { name: "Big Goblin", power: 5, maxHealth: 10 },
-  { name: "Goblin Warrior", power: 7, maxHealth: 15 },
-  { name: "Goblin Champion", power: 10, maxHealth: 20 },
-  { name: "Forest Troll", power: 12, maxHealth: 25 },
-  { name: "Mountain Troll", power: 15, maxHealth: 30 },
-  { name: "Ancient Troll", power: 18, maxHealth: 35 },
-  { name: "Forest Ogre", power: 20, maxHealth: 40 },
-  { name: "Mountain Ogre", power: 25, maxHealth: 50 },
-  { name: "Ancient Ogre", power: 30, maxHealth: 60 },
-  { name: "Young Dragon", power: 35, maxHealth: 70 },
-  { name: "Adult Dragon", power: 40, maxHealth: 80 },
-  { name: "Elder Dragon", power: 45, maxHealth: 90 },
-  { name: "Ancient Dragon", power: 50, maxHealth: 100 },
-  { name: "Dragon Lord", power: 60, maxHealth: 120 },
-  { name: "Dragon King", power: 70, maxHealth: 140 },
-  { name: "Dragon Emperor", power: 80, maxHealth: 160 },
-  { name: "Dragon God", power: 90, maxHealth: 180 },
-  { name: "Primordial Dragon", power: 100, maxHealth: 200 },
-  { name: "Cosmic Dragon", power: 120, maxHealth: 240 },
-  { name: "Eternal Dragon", power: 140, maxHealth: 280 },
-  { name: "Infinite Dragon", power: 160, maxHealth: 320 },
-  { name: "Celestial Dragon", power: 200, maxHealth: 400 },
-  { name: "Astral Dragon", power: 240, maxHealth: 480 },
-  { name: "Nebula Dragon", power: 280, maxHealth: 560 },
-  { name: "Void Dragon", power: 320, maxHealth: 640 },
-  { name: "Abyssal Dragon", power: 360, maxHealth: 720 },
-  { name: "Elder Titan", power: 400, maxHealth: 800 },
-  { name: "Ancient Titan", power: 450, maxHealth: 900 },
-  { name: "Primordial Titan", power: 500, maxHealth: 1000 },
-  { name: "Celestial Titan", power: 600, maxHealth: 1200 },
-  { name: "Astral Titan", power: 700, maxHealth: 1400 },
-  { name: "Cosmic Titan", power: 800, maxHealth: 1600 },
-  { name: "Void Titan", power: 900, maxHealth: 1800 },
-  { name: "Abyssal Titan", power: 1000, maxHealth: 2000 },
-  { name: "Elder God", power: 1200, maxHealth: 2400 },
-  { name: "Ancient God", power: 1400, maxHealth: 2800 },
-  { name: "Primordial God", power: 1600, maxHealth: 3200 },
-  { name: "Celestial God", power: 1800, maxHealth: 3600 },
-  { name: "Astral God", power: 2000, maxHealth: 4000 },
-  { name: "Cosmic God", power: 2400, maxHealth: 4800 },
-  { name: "Void God", power: 2800, maxHealth: 5600 },
-  { name: "Abyssal God", power: 3200, maxHealth: 6400 },
-  { name: "Elder Deity", power: 3600, maxHealth: 7200 },
-  { name: "Ancient Deity", power: 4000, maxHealth: 8000 },
-  { name: "Primordial Deity", power: 4500, maxHealth: 9000 },
-  { name: "Celestial Deity", power: 5000, maxHealth: 10000 },
-  { name: "Astral Deity", power: 6000, maxHealth: 12000 },
-  { name: "Cosmic Deity", power: 7000, maxHealth: 14000 },
-  { name: "Void Deity", power: 8000, maxHealth: 16000 },
-  { name: "Abyssal Deity", power: 9000, maxHealth: 18000 },
-  { name: "Elder Creator", power: 10000, maxHealth: 20000 },
-  { name: "Ancient Creator", power: 12000, maxHealth: 24000 },
-  { name: "Primordial Creator", power: 14000, maxHealth: 28000 },
-  { name: "Celestial Creator", power: 16000, maxHealth: 32000 },
-  { name: "Astral Creator", power: 18000, maxHealth: 36000 },
-  { name: "Cosmic Creator", power: 20000, maxHealth: 40000 },
-  { name: "Void Creator", power: 24000, maxHealth: 48000 },
-  { name: "Abyssal Creator", power: 28000, maxHealth: 56000 },
-  { name: "Elder Architect", power: 32000, maxHealth: 64000 },
-  { name: "Ancient Architect", power: 36000, maxHealth: 72000 },
-  { name: "Primordial Architect", power: 40000, maxHealth: 80000 },
-  { name: "Celestial Architect", power: 45000, maxHealth: 90000 },
-  { name: "Astral Architect", power: 50000, maxHealth: 100000 },
-  { name: "Cosmic Architect", power: 60000, maxHealth: 120000 },
-  { name: "Void Architect", power: 70000, maxHealth: 140000 },
-  { name: "Abyssal Architect", power: 80000, maxHealth: 160000 },
-  { name: "Elder Sovereign", power: 90000, maxHealth: 180000 },
-  { name: "Ancient Sovereign", power: 100000, maxHealth: 200000 },
-  { name: "Primordial Sovereign", power: 120000, maxHealth: 240000 },
-  { name: "Celestial Sovereign", power: 140000, maxHealth: 280000 },
-  { name: "Astral Sovereign", power: 160000, maxHealth: 320000 },
-  { name: "Cosmic Sovereign", power: 180000, maxHealth: 360000 },
-  { name: "Void Sovereign", power: 200000, maxHealth: 400000 },
-  { name: "Abyssal Sovereign", power: 240000, maxHealth: 480000 },
-  { name: "Elder Absolute", power: 280000, maxHealth: 560000 },
-  { name: "Ancient Absolute", power: 320000, maxHealth: 640000 },
-  { name: "Primordial Absolute", power: 360000, maxHealth: 720000 },
-  { name: "Celestial Absolute", power: 400000, maxHealth: 800000 },
-  { name: "Astral Absolute", power: 450000, maxHealth: 900000 },
-  { name: "Cosmic Absolute", power: 500000, maxHealth: 1000000 },
-  { name: "Void Absolute", power: 600000, maxHealth: 1200000 },
-  { name: "Abyssal Absolute", power: 700000, maxHealth: 1400000 },
-  { name: "Elder Omniscient", power: 800000, maxHealth: 1600000 },
-  { name: "Ancient Omniscient", power: 900000, maxHealth: 1800000 },
+const opponents: {
+  name: string;
+  power: number;
+  maxHealth: number;
+  minLevel: number;
+}[] = [
+  // Level 1-5: Early Game
+  { name: "Small Goblin", power: 2, maxHealth: 5, minLevel: 1 },
+  { name: "Medium Goblin", power: 3, maxHealth: 7, minLevel: 1 },
+  { name: "Big Goblin", power: 5, maxHealth: 10, minLevel: 1 },
+  { name: "Goblin Warrior", power: 7, maxHealth: 15, minLevel: 2 },
+  { name: "Goblin Champion", power: 10, maxHealth: 20, minLevel: 3 },
+
+  // Level 4-10: Early Mid Game
+  { name: "Forest Troll", power: 12, maxHealth: 25, minLevel: 4 },
+  { name: "Mountain Troll", power: 15, maxHealth: 30, minLevel: 5 },
+  { name: "Ancient Troll", power: 18, maxHealth: 35, minLevel: 6 },
+  { name: "Forest Ogre", power: 20, maxHealth: 40, minLevel: 7 },
+  { name: "Mountain Ogre", power: 25, maxHealth: 50, minLevel: 8 },
+  { name: "Ancient Ogre", power: 30, maxHealth: 60, minLevel: 10 },
+
+  // Level 10-20: Mid Game
+  { name: "Young Dragon", power: 35, maxHealth: 70, minLevel: 12 },
+  { name: "Adult Dragon", power: 40, maxHealth: 80, minLevel: 14 },
+  { name: "Elder Dragon", power: 45, maxHealth: 90, minLevel: 16 },
+  { name: "Ancient Dragon", power: 50, maxHealth: 100, minLevel: 18 },
+  { name: "Dragon Lord", power: 60, maxHealth: 120, minLevel: 20 },
+
+  // Level 20-30: Late Mid Game
+  { name: "Dragon King", power: 70, maxHealth: 140, minLevel: 22 },
+  { name: "Dragon Emperor", power: 80, maxHealth: 160, minLevel: 24 },
+  { name: "Dragon God", power: 90, maxHealth: 180, minLevel: 26 },
+  { name: "Primordial Dragon", power: 100, maxHealth: 200, minLevel: 28 },
+  { name: "Cosmic Dragon", power: 120, maxHealth: 240, minLevel: 30 },
+
+  // Level 30-40: Late Game
+  { name: "Eternal Dragon", power: 140, maxHealth: 280, minLevel: 32 },
+  { name: "Infinite Dragon", power: 160, maxHealth: 320, minLevel: 34 },
+  { name: "Celestial Dragon", power: 200, maxHealth: 400, minLevel: 36 },
+  { name: "Astral Dragon", power: 240, maxHealth: 480, minLevel: 38 },
+  { name: "Nebula Dragon", power: 280, maxHealth: 560, minLevel: 40 },
+
+  // Level 40-50: End Game
+  { name: "Void Dragon", power: 320, maxHealth: 640, minLevel: 42 },
+  { name: "Abyssal Dragon", power: 360, maxHealth: 720, minLevel: 44 },
+  { name: "Elder Titan", power: 400, maxHealth: 800, minLevel: 46 },
+  { name: "Ancient Titan", power: 450, maxHealth: 900, minLevel: 48 },
+  { name: "Primordial Titan", power: 500, maxHealth: 1000, minLevel: 50 },
+
+  // Level 50-60: Post Game
+  { name: "Celestial Titan", power: 600, maxHealth: 1200, minLevel: 52 },
+  { name: "Astral Titan", power: 700, maxHealth: 1400, minLevel: 54 },
+  { name: "Cosmic Titan", power: 800, maxHealth: 1600, minLevel: 56 },
+  { name: "Void Titan", power: 900, maxHealth: 1800, minLevel: 58 },
+  { name: "Abyssal Titan", power: 1000, maxHealth: 2000, minLevel: 60 },
+
+  // Level 60-70: Super End Game
+  { name: "Elder God", power: 1200, maxHealth: 2400, minLevel: 62 },
+  { name: "Ancient God", power: 1400, maxHealth: 2800, minLevel: 64 },
+  { name: "Primordial God", power: 1600, maxHealth: 3200, minLevel: 66 },
+  { name: "Celestial God", power: 1800, maxHealth: 3600, minLevel: 68 },
+  { name: "Astral God", power: 2000, maxHealth: 4000, minLevel: 70 },
+
+  // Level 70-80: Ultra End Game
+  { name: "Cosmic God", power: 2400, maxHealth: 4800, minLevel: 72 },
+  { name: "Void God", power: 2800, maxHealth: 5600, minLevel: 74 },
+  { name: "Abyssal God", power: 3200, maxHealth: 6400, minLevel: 76 },
+  { name: "Elder Deity", power: 3600, maxHealth: 7200, minLevel: 78 },
+  { name: "Ancient Deity", power: 4000, maxHealth: 8000, minLevel: 80 },
+
+  // Level 80-90: Mythic End Game
+  { name: "Primordial Deity", power: 4500, maxHealth: 9000, minLevel: 82 },
+  { name: "Celestial Deity", power: 5000, maxHealth: 10000, minLevel: 84 },
+  { name: "Astral Deity", power: 6000, maxHealth: 12000, minLevel: 86 },
+  { name: "Cosmic Deity", power: 7000, maxHealth: 14000, minLevel: 88 },
+  { name: "Void Deity", power: 8000, maxHealth: 16000, minLevel: 90 },
+
+  // Level 90-100: Legendary End Game
+  { name: "Abyssal Deity", power: 9000, maxHealth: 18000, minLevel: 92 },
+  { name: "Elder Creator", power: 10000, maxHealth: 20000, minLevel: 94 },
+  { name: "Ancient Creator", power: 12000, maxHealth: 24000, minLevel: 96 },
+  { name: "Primordial Creator", power: 14000, maxHealth: 28000, minLevel: 98 },
+  { name: "Celestial Creator", power: 16000, maxHealth: 32000, minLevel: 100 },
+
+  // Level 100+: Ultimate End Game
+  { name: "Astral Creator", power: 18000, maxHealth: 36000, minLevel: 102 },
+  { name: "Cosmic Creator", power: 20000, maxHealth: 40000, minLevel: 104 },
+  { name: "Void Creator", power: 24000, maxHealth: 48000, minLevel: 106 },
+  { name: "Abyssal Creator", power: 28000, maxHealth: 56000, minLevel: 108 },
+  { name: "Elder Architect", power: 32000, maxHealth: 64000, minLevel: 110 },
+
+  // Level 110+: Transcendent End Game
+  { name: "Ancient Architect", power: 36000, maxHealth: 72000, minLevel: 112 },
+  {
+    name: "Primordial Architect",
+    power: 40000,
+    maxHealth: 80000,
+    minLevel: 114,
+  },
+  {
+    name: "Celestial Architect",
+    power: 45000,
+    maxHealth: 90000,
+    minLevel: 116,
+  },
+  { name: "Astral Architect", power: 50000, maxHealth: 100000, minLevel: 118 },
+  { name: "Cosmic Architect", power: 60000, maxHealth: 120000, minLevel: 120 },
+
+  // Level 120+: Divine End Game
+  { name: "Void Architect", power: 70000, maxHealth: 140000, minLevel: 122 },
+  { name: "Abyssal Architect", power: 80000, maxHealth: 160000, minLevel: 124 },
+  { name: "Elder Sovereign", power: 90000, maxHealth: 180000, minLevel: 126 },
+  {
+    name: "Ancient Sovereign",
+    power: 100000,
+    maxHealth: 200000,
+    minLevel: 128,
+  },
+  {
+    name: "Primordial Sovereign",
+    power: 120000,
+    maxHealth: 240000,
+    minLevel: 130,
+  },
+
+  // Level 130+: Celestial End Game
+  {
+    name: "Celestial Sovereign",
+    power: 140000,
+    maxHealth: 280000,
+    minLevel: 132,
+  },
+  { name: "Astral Sovereign", power: 160000, maxHealth: 320000, minLevel: 134 },
+  { name: "Cosmic Sovereign", power: 180000, maxHealth: 360000, minLevel: 136 },
+  { name: "Void Sovereign", power: 200000, maxHealth: 400000, minLevel: 138 },
+  {
+    name: "Abyssal Sovereign",
+    power: 240000,
+    maxHealth: 480000,
+    minLevel: 140,
+  },
+
+  // Level 140+: Eternal End Game
+  { name: "Elder Absolute", power: 280000, maxHealth: 560000, minLevel: 142 },
+  { name: "Ancient Absolute", power: 320000, maxHealth: 640000, minLevel: 144 },
+  {
+    name: "Primordial Absolute",
+    power: 360000,
+    maxHealth: 720000,
+    minLevel: 146,
+  },
+  {
+    name: "Celestial Absolute",
+    power: 400000,
+    maxHealth: 800000,
+    minLevel: 148,
+  },
+  { name: "Astral Absolute", power: 450000, maxHealth: 900000, minLevel: 150 },
+
+  // Level 150+: Infinite End Game
+  { name: "Cosmic Absolute", power: 500000, maxHealth: 1000000, minLevel: 152 },
+  { name: "Void Absolute", power: 600000, maxHealth: 1200000, minLevel: 154 },
+  {
+    name: "Abyssal Absolute",
+    power: 700000,
+    maxHealth: 1400000,
+    minLevel: 156,
+  },
+  {
+    name: "Elder Omniscient",
+    power: 800000,
+    maxHealth: 1600000,
+    minLevel: 158,
+  },
+  {
+    name: "Ancient Omniscient",
+    power: 900000,
+    maxHealth: 1800000,
+    minLevel: 160,
+  },
+
+  // Level 160+: Final End Game
   {
     name: "Primordial Omniscient",
     power: 1000000,
     maxHealth: 2000000,
+    minLevel: 162,
   },
   {
     name: "Celestial Omniscient",
     power: 1200000,
     maxHealth: 2400000,
+    minLevel: 164,
   },
-  { name: "Astral Omniscient", power: 1400000, maxHealth: 2800000 },
-  { name: "Cosmic Omniscient", power: 1600000, maxHealth: 3200000 },
-  { name: "Void Omniscient", power: 1800000, maxHealth: 3600000 },
-  { name: "Abyssal Omniscient", power: 2000000, maxHealth: 4000000 },
+  {
+    name: "Astral Omniscient",
+    power: 1400000,
+    maxHealth: 2800000,
+    minLevel: 166,
+  },
+  {
+    name: "Cosmic Omniscient",
+    power: 1600000,
+    maxHealth: 3200000,
+    minLevel: 168,
+  },
+  {
+    name: "Void Omniscient",
+    power: 1800000,
+    maxHealth: 3600000,
+    minLevel: 170,
+  },
+  {
+    name: "Abyssal Omniscient",
+    power: 2000000,
+    maxHealth: 4000000,
+    minLevel: 172,
+  },
 ];
