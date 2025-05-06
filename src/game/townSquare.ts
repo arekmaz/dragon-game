@@ -82,7 +82,7 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
             backToTownSquare,
             townSquare,
           ]),
-          s: Effect.all([stats, townSquare]),
+          s: Effect.all([Player.use((s) => s.stats), townSquare]),
           q: Effect.all([
             display`quitting...`,
             Effect.sleep(1000),
