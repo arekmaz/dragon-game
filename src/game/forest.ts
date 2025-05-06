@@ -96,7 +96,8 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
                 )
               : Effect.flatMap(
                   opStrike,
-                  (dmg) => display`It suprises you, dealing you ${dmg} damage`
+                  (dmg) =>
+                    display`It suprises you, dealing you ${k.red(dmg)} damage`
                 )
           )
         );
@@ -118,14 +119,18 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
             {
               a: Effect.gen(function* () {
                 const dmg = yield* playerStrike;
-                yield* display`You strike ${opponent.name}, dealing ${dmg} damage.`;
+                yield* display`You strike ${k.red(
+                  opponent.name
+                )}, dealing ${k.red(dmg)} damage.`;
 
                 if (!(yield* opIsAlive)) {
                   return;
                 }
 
                 const opDmg = yield* opStrike;
-                yield* display`${opponent.name}, strikes you back, dealing ${opDmg} damage.`;
+                yield* display`${k.red(
+                  opponent.name
+                )}, strikes you back, dealing ${k.red(opDmg)} damage.`;
 
                 yield* newLine;
 
@@ -138,7 +143,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
                   Player.updateGold((g) => Math.max(0, g - lost))
                 ),
                 Effect.flatMap(
-                  (lost) => display`You escape, losing ${lost} gold`
+                  (lost) => display`You escape, losing ${k.red(lost)} gold`
                 )
               ),
             },
@@ -162,7 +167,9 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
           yield* Player.updateGold((g) => g + gainedGold);
           yield* display`You killed ${opponent.name} gaining ${gainedExp} exp and ${gainedGold} gold`;
           if (gainedLevels > 0) {
-            yield* display`You gained a new level: LEVEL ${yield* Player.level}`;
+            yield* display`You gained a new level: LEVEL ${k
+              .bold()
+              .yellow(yield* Player.level)}`;
           }
           yield* newLine;
           yield* displayYield();

@@ -7,6 +7,8 @@ export { k };
 
 export class Display extends Effect.Service<Display>()("Display", {
   effect: Effect.gen(function* () {
+    const terminal = yield* Terminal.Terminal;
+
     const displayLines = (s: string | TemplateStringsArray, ...args: any[]) => {
       if (typeof s === "string") {
         return s
@@ -32,14 +34,24 @@ export class Display extends Effect.Service<Display>()("Display", {
         .replace(/\n?$/, "\n");
     };
 
+    const displayRaw = function (
+      s: string | TemplateStringsArray,
+      ...args: any[]
+    ) {
+      return Effect.orDie(
+        Effect.gen(function* () {
+          yield* terminal.display(k.green(String.raw({ raw: s }, ...args)));
+        })
+      );
+    };
+
     const display = function (
       s: string | TemplateStringsArray,
       ...args: any[]
     ) {
       return Effect.orDie(
         Effect.gen(function* () {
-          const terminal = yield* Terminal.Terminal;
-          yield* terminal.display(k.green(displayLines(s, ...args)));
+          yield* displayRaw(displayLines(s, ...args));
         })
       );
     };
@@ -56,7 +68,7 @@ export class Display extends Effect.Service<Display>()("Display", {
             yield* display(s, ...args);
           }
 
-          yield* display(`Press <ENTER> to continue`);
+          yield* displayRaw(`Press <ENTER> to continue`);
 
           while (true) {
             const input = yield* terminal.readInput;
@@ -90,7 +102,7 @@ export class Display extends Effect.Service<Display>()("Display", {
 
           let input: string = "";
 
-          const prompt = display`${
+          const prompt = displayRaw`${
             opts.promptPrefix ?? "Enter an option"
           } [${Object.keys(choices)
             .map((c) => c.toUpperCase())
@@ -100,13 +112,19 @@ export class Display extends Effect.Service<Display>()("Display", {
 
           while (!(input in choices)) {
             yield* prompt;
-            yield* newLine;
             input = (yield* terminal.readInput).key.name.toLowerCase();
 
             if (input === "return") {
               input = opts.defaultOption ?? "";
             }
+
+            if (input in choices) {
+              continue;
+            }
           }
+
+          yield* displayRaw` ${input} `;
+          yield* newLine;
 
           const result = yield* choices[input];
 
@@ -122,6 +140,7 @@ export class Display extends Effect.Service<Display>()("Display", {
       newLine,
       choice,
       clearScreen,
+      displayRaw,
     };
   }),
 }) {}
