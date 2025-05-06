@@ -79,6 +79,7 @@ export class Player extends Effect.Service<Player>()("Player", {
 
     return { data, stats };
   }),
+  dependencies: [Display.Default],
 }) {
   static data = this.use((s) => s.data);
 

@@ -32,4 +32,5 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
       inn,
     };
   }),
+  dependencies: [Display.Default],
 }) {}

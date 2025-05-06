@@ -122,6 +122,7 @@ What do you need?
       healer,
     };
   }),
+  dependencies: [Display.Default],
 }) {}
 
 export const healthPointCost = 5;
