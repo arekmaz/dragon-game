@@ -29,9 +29,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
         yield* choice(
           {
-            l: Effect.all([fight, forestBackMsg, forest]).pipe(
-              Effect.tapError(Effect.logError)
-            ),
+            l: Effect.all([fight, forestBackMsg, forest]),
             s: Effect.all([Player.use((s) => s.stats), forest]),
             r: Effect.void,
           },
@@ -86,10 +84,17 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
                     dmg
                   )} damage`
               )
-            : Effect.flatMap(
-                opStrike,
-                (dmg) =>
-                  display`It suprises you, dealing you ${k.red(dmg)} damage`
+            : opStrike.pipe(
+                Effect.flatMap(
+                  (dmg) =>
+                    display`It suprises you, dealing you ${k.red(dmg)} damage`
+                ),
+                Effect.catchAll(
+                  (e) =>
+                    display`It suprises you, dealing you ${k.red(
+                      e.amount
+                    )} damage, killing you`
+                )
               )
         )
       );

@@ -117,7 +117,7 @@ export class Player extends Effect.Service<Player>()("Player", {
     this.updateHealth((h) => h - dmg).pipe(
       Effect.filterOrFail(
         (h) => h > 0,
-        () => new PlayerDeadException({ reason: "Dealt damage" })
+        () => new PlayerDeadException({ reason: "damage", amount: dmg })
       )
     );
 
@@ -125,8 +125,9 @@ export class Player extends Effect.Service<Player>()("Player", {
     this.updateHealth((h) => h + health);
 }
 
-export class PlayerDeadException extends Data.TaggedClass(
+export class PlayerDeadException extends Data.TaggedError(
   "PlayerDeadException"
 )<{
-  reason: string;
+  reason: "damage";
+  amount: number;
 }> {}
