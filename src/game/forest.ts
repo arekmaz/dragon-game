@@ -110,62 +110,70 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
       yield* newLine;
 
-      while ((yield* Player.isAlive) && (yield* opIsAlive)) {
-        yield* display`
+      const move: Effect.Effect<void, PlayerDeadException, Terminal | Player> =
+        Effect.gen(function* () {
+          yield* display`
     What do you do next?
   [A] Attack
   [S] Stats
   [R] Run for your life`;
 
-        yield* choice(
-          {
-            a: Effect.gen(function* () {
-              const dmg = yield* playerStrike;
+          yield* choice(
+            {
+              a: Effect.gen(function* () {
+                const dmg = yield* playerStrike;
 
-              yield* newLine;
+                yield* newLine;
 
-              yield* display`You strike ${k.red(
-                opponent.name
-              )}, dealing ${k.red(dmg)} damage.`;
+                yield* display`You strike ${k.red(
+                  opponent.name
+                )}, dealing ${k.red(dmg)} damage.`;
 
-              if (!(yield* opIsAlive)) {
-                return;
-              }
+                if (!(yield* opIsAlive)) {
+                  return;
+                }
 
-              const opDmg = yield* opStrike.pipe(
-                Effect.tapError(
-                  (e) =>
-                    display`${k.red(
-                      opponent.name
-                    )}, strikes you back, dealing ${k.red(
-                      e.amount
-                    )} damage and killing you.`
+                const opDmg = yield* opStrike.pipe(
+                  Effect.tapError(
+                    (e) =>
+                      display`${k.red(
+                        opponent.name
+                      )}, strikes you back, dealing ${k.red(
+                        e.amount
+                      )} damage and killing you.`
+                  )
+                );
+
+                yield* display`${k.red(
+                  opponent.name
+                )}, strikes you back, dealing ${k.red(opDmg)} damage.`;
+
+                yield* newLine;
+
+                yield* fightStats;
+
+                yield* move;
+              }),
+
+              s: Effect.all([fightStats, move]),
+
+              r: Random.nextIntBetween(3, 6).pipe(
+                Effect.tap((lost) =>
+                  Player.updateGold((g) => Math.max(0, g - lost))
+                ),
+                Effect.flatMap(
+                  (lost) => display`You escape, losing ${k.red(lost)} gold`
                 )
-              );
-
-              yield* display`${k.red(
-                opponent.name
-              )}, strikes you back, dealing ${k.red(opDmg)} damage.`;
-
-              yield* newLine;
-
-              yield* fightStats;
-            }),
-
-            s: fightStats,
-            r: Random.nextIntBetween(3, 6).pipe(
-              Effect.tap((lost) =>
-                Player.updateGold((g) => Math.max(0, g - lost))
               ),
-              Effect.flatMap(
-                (lost) => display`You escape, losing ${k.red(lost)} gold`
-              )
-            ),
-          },
-          { defaultOption: "s" }
-        );
+            },
+            { defaultOption: "s" }
+          );
 
-        yield* newLine;
+          yield* newLine;
+        });
+
+      if (yield* opIsAlive) {
+        yield* move;
       }
 
       if (!(yield* opIsAlive)) {

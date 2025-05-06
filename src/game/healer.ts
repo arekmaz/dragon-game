@@ -95,6 +95,7 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
                 ({ cost, restoredHealth }) =>
                   display`Restored ${restoredHealth} health, ${cost} gold paid`
               ),
+              Effect.zipRight(newLine),
               Effect.zipRight(healer)
             ),
             a: healSpecified.pipe(
@@ -102,6 +103,7 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
                 ({ cost, restoredHealth }) =>
                   display`Restored ${restoredHealth} health, ${cost} gold paid`
               ),
+              Effect.zipRight(newLine),
               Effect.zipRight(healer)
             ),
             s: Player.use((s) => s.stats).pipe(Effect.zipRight(healer)),

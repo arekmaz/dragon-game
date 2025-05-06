@@ -13,8 +13,7 @@ const maxHealth = (level: number) => 20 + (level - 1) * 2;
 
 const requiredLvlExp = [50, 100, 170, 250, 400];
 
-const getExpRequiredForLvl = (lvl: number) =>
-  requiredLvlExp[Math.min(lvl - 1, requiredLvlExp.length - 1)];
+const getExpRequiredForLvl = (lvl: number) => requiredLvlExp[lvl - 1];
 
 const lvlByExp = (exp: number) => {
   let result = 0;
@@ -65,12 +64,15 @@ export class Player extends Effect.Service<Player>()("Player", {
       yield* newLine;
       const level = lvlByExp(exp);
 
+      const currentLevelExp =
+        exp - requiredLvlExp.slice(0, level - 1).reduce((a, b) => a + b, 0);
+
       yield* display`
     Name: ${name}
     Class: ${playerClass}
     Health: ${health}/${maxHealth(level)}
     Level: ${level}
-    Exp: ${exp}/${getExpRequiredForLvl(level)}
+    Exp: ${currentLevelExp}/${getExpRequiredForLvl(level)}
     Equipped weapon: ${eq.weapon}
     Gold: ${gold}
   `;
