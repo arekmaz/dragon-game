@@ -1,5 +1,5 @@
 import { Data, Effect, Ref } from "effect";
-import { display, newLine } from "./display.ts";
+import { Display } from "./display.ts";
 
 export const weapons = { stick: 2, dagger: 5 };
 type Weapon = keyof typeof weapons;
@@ -34,6 +34,8 @@ const startingExp = 0;
 
 export class Player extends Effect.Service<Player>()("Player", {
   effect: Effect.gen(function* () {
+    const { display, newLine } = yield* Display;
+
     const startingLvl = lvlByExp(startingExp);
 
     const data = yield* Ref.make<{
@@ -54,10 +56,31 @@ export class Player extends Effect.Service<Player>()("Player", {
         requiredLvlExp.slice(0, startingLvl - 1).reduce((a, b) => a + b, 0),
     });
 
-    return data;
+    const stats = Effect.gen(function* () {
+      const { name, class: playerClass, health, eq, gold, exp } = yield* data;
+      yield* display`--------------------------------`;
+      yield* display`${name}'s stats:`;
+      yield* display`--------------------------------`;
+      yield* newLine;
+      const level = lvlByExp(exp);
+
+      yield* display`
+    Name: ${name}
+    Class: ${playerClass}
+    Health: ${health}/${maxHealth(level)}
+    Level: ${level}
+    Exp: ${exp}/${getExpRequiredForLvl(level)}
+    Equipped weapon: ${eq.weapon}
+    Gold: ${gold}
+  `;
+
+      yield* newLine;
+    });
+
+    return { data, stats };
   }),
 }) {
-  static data = this.use((s) => s);
+  static data = this.use((s) => s.data);
 
   static name = Effect.map(this.data, (d) => d.name);
   static class = Effect.map(this.data, (d) => d.class);
@@ -70,7 +93,7 @@ export class Player extends Effect.Service<Player>()("Player", {
   // returns how many level-ups did player get
   static addExp = (e: number) =>
     this.use((d) =>
-      Ref.modify(d, (o) => [
+      Ref.modify(d.data, (o) => [
         lvlByExp(o.exp + e) - lvlByExp(o.exp),
         { ...o, exp: o.exp + e },
       ])
@@ -78,14 +101,14 @@ export class Player extends Effect.Service<Player>()("Player", {
 
   static gold = Effect.map(this.data, (d) => d.gold);
   static updateGold = (fn: (o: number) => number) =>
-    this.use((d) => Ref.update(d, (o) => ({ ...o, gold: fn(o.gold) })));
+    this.use((d) => Ref.update(d.data, (o) => ({ ...o, gold: fn(o.gold) })));
 
   static health = Effect.map(this.data, (d) => d.health);
   static isAlive = Effect.map(this.data, (d) => d.health > 0);
   static maxHealth = Effect.map(this.data, (d) => maxHealth(lvlByExp(d.exp)));
   static updateHealth = (fn: (o: number) => number) =>
     this.use((d) =>
-      Ref.modify(d, (o) => [fn(o.health), { ...o, health: fn(o.health) }])
+      Ref.modify(d.data, (o) => [fn(o.health), { ...o, health: fn(o.health) }])
     );
 
   static decreaseHealth = (dmg: number) =>
@@ -99,26 +122,6 @@ export class Player extends Effect.Service<Player>()("Player", {
   static increaseHealth = (health: number) =>
     this.updateHealth((h) => h + health);
 }
-
-export const stats = Effect.gen(function* () {
-  yield* display`--------------------------------`;
-  yield* display`${yield* Player.name}'s stats:`;
-  yield* display`--------------------------------`;
-  yield* newLine;
-  const level = yield* Player.level;
-
-  yield* display`
-    Name: ${yield* Player.name}
-    Class: ${yield* Player.class}
-    Health: ${yield* Player.health}/${yield* Player.maxHealth}
-    Level: ${level}
-    Exp: ${yield* Player.exp}/${getExpRequiredForLvl(level)}
-    Equipped weapon: ${yield* Effect.map(Player.eq, (eq) => eq.weapon)}
-    Gold: ${yield* Player.gold}
-  `;
-
-  yield* newLine;
-});
 
 export class PlayerDeadException extends Data.TaggedError(
   "PlayerDeadException"

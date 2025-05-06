@@ -77,6 +77,8 @@ const gameSetup = Effect.gen(function* () {
   const userName = yield* readName;
   yield* Ref.update(ref, (data) => ({ ...data, name: userName }));
 
+  yield* newLine;
+
   yield* display`
     Hello, ${userName}!
 

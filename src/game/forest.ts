@@ -1,16 +1,13 @@
 import { Terminal } from "@effect/platform/Terminal";
 import { Effect, Random, Ref } from "effect";
-import {
-  choice,
-  clearScreen,
-  display,
-  displayYield,
-  newLine,
-} from "./display.ts";
+import { Display } from "./display.ts";
 import { Player, PlayerDeadException, stats, weapons } from "./player.ts";
 
 export class Forest extends Effect.Service<Forest>()("Forest", {
   effect: Effect.gen(function* () {
+    const { display, newLine, choice, clearScreen, displayYield } =
+      yield* Display;
+
     const forestIntro = Effect.zipRight(
       display`You arrive at the deep dark forest`,
       newLine
@@ -167,6 +164,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
           }
           yield* newLine;
           yield* displayYield();
+          yield* newLine;
         }
       });
 
@@ -176,4 +174,5 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       forest,
     };
   }),
+  dependencies: [Display.Default],
 }) {}
