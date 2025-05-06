@@ -6,6 +6,7 @@ import { Forest } from "./game/forest.ts";
 import { Healer } from "./game/healer.ts";
 import { Inn } from "./game/inn.ts";
 import { Display } from "./game/display.ts";
+import { Bank } from "./game/bank.ts";
 
 const game: Effect.Effect<
   void,
@@ -138,5 +139,6 @@ export const runGame = Effect.all([
   Effect.provide(Forest.Default),
   Effect.provide(Healer.Default),
   Effect.provide(Inn.Default),
+  Effect.provide(Bank.Default),
   Effect.provide(Display.Default)
 ) as Effect.Effect<void, never, never>;

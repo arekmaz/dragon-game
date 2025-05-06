@@ -5,6 +5,7 @@ import { Forest } from "./forest.ts";
 import { Healer } from "./healer.ts";
 import { Inn } from "./inn.ts";
 import { Player, PlayerDeadException } from "./player.ts";
+import { Bank } from "./bank.ts";
 
 export class QuitTownSquareException extends Data.TaggedError(
   "QuitTownSquareException"
@@ -36,6 +37,7 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
       const forestService = yield* Forest;
       const healerService = yield* Healer;
       const innService = yield* Inn;
+      const bankService = yield* Bank;
 
       yield* display`
   [F] Go to the forest
@@ -64,7 +66,8 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
           ]),
           b: Effect.all([
             clearScreen,
-            display`bank`,
+            bankService.bankIntro,
+            bankService.bank,
             backToTownSquare,
             townSquare,
           ]),
