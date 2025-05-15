@@ -111,15 +111,17 @@ const gameSetup: Effect.Effect<
     {
       l: Effect.gen(function* () {
         yield* SaveGame.loadGame().pipe(
+          Effect.tapError(Effect.logDebug),
           Effect.tapError((error) =>
             Effect.all([
               newLine,
-              display(k.red(`Game loading filed... (${error._tag})`)),
+              display(k.red(`Game loading failed...`)),
               newLine,
             ])
           ),
           Effect.orElse(() => gameSetup),
-          Effect.zipRight(player.stats)
+          Effect.zipRight(player.stats),
+          Effect.zipRight(displayYield())
         );
       }),
       c: Effect.gen(function* () {
