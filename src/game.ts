@@ -69,7 +69,6 @@ const gameSetup = Effect.gen(function* () {
   yield* display`Would you like to configure your character or quickly start the game?
   [C] configure
   [R] random`;
-  yield* newLine;
 
   yield* choice(
     {

@@ -1,5 +1,5 @@
-import { Data, Effect, Ref } from "effect";
-import { Display } from "./display.ts";
+import { Data, Effect, pipe, Ref, String } from "effect";
+import { Display, k } from "./display.ts";
 
 export const weapons = {
   stick: 2,
@@ -22,6 +22,8 @@ type Eq = { weapon: Weapon };
 
 export const playerClasses = ["mage", "assassin", "warrior", "archer"] as const;
 type PlayerClass = (typeof playerClasses)[number];
+
+const makeDisplayClass = (c: PlayerClass) => pipe(c, String.capitalize, k.red);
 
 const maxHealth = (level: number) => 20 + (level - 1) * 2;
 
@@ -47,6 +49,8 @@ const lvlByExp = (exp: number) => {
 };
 
 const startingExp = 0;
+
+const makeDisplayName = (n: string) => pipe(n, String.capitalize, k.cyan);
 
 export class Player extends Effect.Service<Player>()("Player", {
   effect: Effect.gen(function* () {
@@ -74,8 +78,9 @@ export class Player extends Effect.Service<Player>()("Player", {
 
     const stats = Effect.gen(function* () {
       const { name, class: playerClass, health, eq, gold, exp } = yield* data;
+      yield* newLine;
       yield* display`--------------------------------`;
-      yield* display`${name}'s stats:`;
+      yield* display`${makeDisplayName(name)}'s stats:`;
       yield* display`--------------------------------`;
       yield* newLine;
       const level = lvlByExp(exp);
@@ -84,25 +89,26 @@ export class Player extends Effect.Service<Player>()("Player", {
         exp - requiredLvlExp.slice(0, level - 1).reduce((a, b) => a + b, 0);
 
       yield* display`
-    Name: ${name}
-    Class: ${playerClass}
-    Health: ${health}/${maxHealth(level)}
-    Level: ${level}
-    Exp: ${currentLevelExp}/${getExpRequiredForLvl(level)}
-    Equipped weapon: ${eq.weapon}
-    Gold: ${gold}
-  `;
+        Name: ${makeDisplayName(name)}
+        Class: ${makeDisplayClass(playerClass)}
+        Health: ${health}/${maxHealth(level)}
+        Level: ${level}
+        Exp: ${currentLevelExp}/${getExpRequiredForLvl(level)}
+        Equipped weapon: ${eq.weapon}
+        Gold: ${gold}
+      `;
 
       yield* newLine;
     });
 
     return { data, stats };
   }),
+
   dependencies: [Display.Default],
 }) {
   static data = this.use((s) => s.data);
 
-  static name = Effect.map(this.data, (d) => d.name);
+  static displayName = Effect.map(this.data, (d) => makeDisplayName(d.name));
   static class = Effect.map(this.data, (d) => d.class);
 
   static eq = Effect.map(this.data, (d) => d.eq);

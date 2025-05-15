@@ -48,7 +48,6 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
         [S] Show stats
         [Q] Quit the game
       `;
-      yield* newLine;
 
       yield* choice(
         {

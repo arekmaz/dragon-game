@@ -86,7 +86,6 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
   [A] heal a speficied amount of points
   [S] show stats
   [R] return to the town square`;
-        yield* newLine;
 
         yield* choice(
           {

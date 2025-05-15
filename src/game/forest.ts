@@ -70,7 +70,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
       const fightStats = Effect.gen(function* () {
         yield* display`
-      ${yield* Player.name}: ${yield* Player.health}/${yield* Player.maxHealth}
+      ${yield* Player.displayName}: ${yield* Player.health}/${yield* Player.maxHealth}
       ${opponent.name}: ${yield* opRef}/${opponent.maxHealth}`;
       });
 

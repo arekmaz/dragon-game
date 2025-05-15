@@ -93,7 +93,7 @@ export class Display extends Effect.Service<Display>()("Display", {
       Effect.gen(function* () {
         let input: string = "";
 
-        const prompt = displayRaw`${
+        const prompt = displayRaw`\n${
           opts.promptPrefix ?? "Enter an option"
         } [${Object.keys(choices)
           .map((c) => c.toUpperCase())

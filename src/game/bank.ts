@@ -7,7 +7,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
   effect: Effect.gen(function* () {
     const { display, newLine, choice, displayRaw } = yield* Display;
     const terminal = yield* Terminal;
-    const bankRef = yield* Ref.make(0);
+    const bankBalanceRef = yield* Ref.make(0);
 
     const bankIntro = display`Welcome to the bank, how can I help you?`;
 
@@ -36,7 +36,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
       const amount = yield* readAmount;
 
       yield* Player.updateGold((g) => g - amount);
-      yield* Ref.update(bankRef, (b) => b + amount);
+      yield* Ref.update(bankBalanceRef, (b) => b + amount);
       yield* display`Deposited ${amount} gold`;
     });
 
@@ -44,24 +44,26 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
       const playerGold = yield* Player.gold;
 
       yield* Player.updateGold((g) => g - playerGold);
-      yield* Ref.update(bankRef, (b) => b + playerGold);
+      yield* Ref.update(bankBalanceRef, (b) => b + playerGold);
       yield* display`Deposited everything - ${k.yellow(playerGold)} gold`;
     });
 
     const checkBalance = Effect.gen(function* () {
-      const bankBalance = yield* Ref.get(bankRef);
+      const bankBalance = yield* bankBalanceRef;
+
       yield* display`Your balance is ${k.yellow(bankBalance)} gold`;
     });
 
     const withdrawAllGold = Effect.gen(function* () {
-      const bankBalance = yield* Ref.get(bankRef);
+      const bankBalance = yield* bankBalanceRef;
+
       yield* Player.updateGold((g) => g + bankBalance);
-      yield* Ref.update(bankRef, (b) => 0);
+      yield* Ref.update(bankBalanceRef, (b) => 0);
       yield* display`Withdrew everything - ${k.yellow(bankBalance)} gold`;
     });
 
     const withdrawSomeGold = Effect.gen(function* () {
-      const bankBalance = yield* Ref.get(bankRef);
+      const bankBalance = yield* bankBalanceRef;
 
       const readAmount: Effect.Effect<number, never, Terminal> =
         terminal.readLine.pipe(
@@ -85,7 +87,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
       const amount = yield* readAmount;
 
       yield* Player.updateGold((g) => g + amount);
-      yield* Ref.update(bankRef, (b) => b - amount);
+      yield* Ref.update(bankBalanceRef, (b) => b - amount);
       yield* display`Withdrew ${k.yellow(amount)} gold`;
     });
 
