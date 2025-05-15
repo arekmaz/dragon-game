@@ -17,22 +17,22 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
 
     const townSquareIntro = Effect.zipRight(
       display`
-  Welcome to the Town Square, where do you want to go?
-  `,
+        Welcome to the Town Square, where do you want to go?
+      `,
       newLine
     );
 
     const backToTownSquare = Effect.zipRight(
       display`
-  Welcome to the Town Square, where do you want to go?
-  `,
+        Welcome back to the Town Square, where do you want to go?
+      `,
       newLine
     );
 
     const townSquare: Effect.Effect<
       void,
       void | PlayerDeadException | QuitTownSquareException,
-      Terminal | Forest | Player | Healer | Inn
+      Terminal | Forest | Player | Healer | Inn | Bank
     > = Effect.gen(function* () {
       const forestService = yield* Forest;
       const healerService = yield* Healer;
@@ -40,13 +40,14 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
       const bankService = yield* Bank;
 
       yield* display`
-  [F] Go to the forest
-  [W] Swords and armours
-  [H] Town's healer
-  [B] Bank
-  [I] The inn
-  [S] Show stats
-  [Q] Quit the game`;
+        [F] Go to the forest
+        [W] Swords and armours
+        [H] Town's healer
+        [B] Bank
+        [I] The inn
+        [S] Show stats
+        [Q] Quit the game
+      `;
       yield* newLine;
 
       yield* choice(

@@ -11,7 +11,14 @@ import { Bank } from "./game/bank.ts";
 const game: Effect.Effect<
   void,
   void,
-  TownSquare | Terminal.Terminal | Forest | Player | Healer | Inn | Display
+  | TownSquare
+  | Terminal.Terminal
+  | Forest
+  | Player
+  | Healer
+  | Inn
+  | Display
+  | Bank
 > = Effect.gen(function* () {
   const { display, newLine, clearScreen, displayYield } = yield* Display;
 
@@ -59,7 +66,9 @@ const gameSetup = Effect.gen(function* () {
   yield* display`Welcome to the dragon game`;
   yield* newLine;
 
-  yield* display`Would you like to configure your character or quickly start the game?`;
+  yield* display`Would you like to configure your character or quickly start the game?
+  [C] configure
+  [R] random`;
   yield* newLine;
 
   yield* choice(

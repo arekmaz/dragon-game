@@ -1,7 +1,21 @@
 import { Data, Effect, Ref } from "effect";
 import { Display } from "./display.ts";
 
-export const weapons = { stick: 2, dagger: 5 };
+export const weapons = {
+  stick: 2,
+  dagger: 5,
+  sword: 10,
+  axe: 15,
+  mace: 20,
+  club: 25,
+  greatsword: 30,
+  halberd: 35,
+  greatmace: 40,
+  greataxe: 45,
+  greatclub: 50,
+  greathalberd: 60,
+};
+
 type Weapon = keyof typeof weapons;
 
 type Eq = { weapon: Weapon };
@@ -21,9 +35,11 @@ const lvlByExp = (exp: number) => {
 
   for (const required of requiredLvlExp) {
     result++;
+
     if (expLeft < required) {
       return result;
     }
+
     expLeft -= required;
   }
 
