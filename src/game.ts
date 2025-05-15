@@ -1,56 +1,128 @@
 import { Terminal } from "@effect/platform";
 import { Effect, Ref, Schema } from "effect";
-import { Player, type PlayerClass, playerClasses } from "./game/player.ts";
+import {
+  Player,
+  type PlayerClass,
+  playerClasses,
+  PlayerData,
+} from "./game/player.ts";
 import { TownSquare } from "./game/townSquare.ts";
 import { Forest } from "./game/forest.ts";
 import { Healer } from "./game/healer.ts";
 import { Inn } from "./game/inn.ts";
-import { Display } from "./game/display.ts";
+import { Display, k } from "./game/display.ts";
 import { Bank } from "./game/bank.ts";
 import { Weaponsmith } from "./game/weaponsmith.ts";
 import { Armorsmith } from "./game/armorsmith.ts";
+import { FileSystem } from "@effect/platform";
+import { NodeFileSystem } from "@effect/platform-node";
 
-const game: Effect.Effect<void, never, TownSquare | Player | Display> =
-  Effect.gen(function* () {
-    const { display, newLine, clearScreen, displayYield } = yield* Display;
+class GameData extends Schema.Class<GameData>("GameData")({
+  player: PlayerData,
+  bankBalance: Schema.NonNegativeInt,
+}) {}
 
-    const townSquareService = yield* TownSquare;
+const JsonGameData = Schema.parseJson(GameData, { space: 2 });
 
-    yield* clearScreen;
-    yield* display`Game started`;
-    yield* newLine;
+export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
+  effect: Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const player = yield* Player;
+    const bank = yield* Bank;
 
-    yield* townSquareService.intro;
-    yield* townSquareService.townSquare.pipe(
-      Effect.catchTags({
-        PlayerDeadException: () =>
-          Effect.gen(function* () {
-            yield* Player.updateGold(() => 0);
-            const maxHealth = yield* Player.getMaxHealth;
-            yield* Player.updateHealth(() => maxHealth);
-            yield* displayYield`You died, you lost your gold, the game will restart`;
+    const defaultSaveFile = "game.json";
 
-            yield* game;
-          }),
-      })
-    );
-  });
+    const saveGame = (fileName: string = defaultSaveFile) =>
+      Effect.gen(function* () {
+        const saveData = yield* Schema.encode(JsonGameData)({
+          player: yield* player.data.get,
+          bankBalance: yield* bank.bankBalanceRef.get,
+        });
+        console.log(saveData);
 
-const gameSetup = Effect.gen(function* () {
+        yield* fs.writeFileString(fileName, saveData);
+      });
+
+    const loadGame = (fileName: string = defaultSaveFile) =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+
+        const gameData = yield* fs
+          .readFileString(fileName)
+          .pipe(Effect.flatMap(Schema.decode(JsonGameData)));
+
+        yield* Ref.update(player.data, () => gameData.player);
+        yield* Ref.update(bank.bankBalanceRef, () => gameData.bankBalance);
+      });
+
+    return { saveGame, loadGame };
+  }),
+  dependencies: [NodeFileSystem.layer],
+  accessors: true,
+}) {}
+
+const game: Effect.Effect<
+  void,
+  never,
+  TownSquare | Player | Display | SaveGame
+> = Effect.gen(function* () {
+  const { display, newLine, clearScreen, displayYield } = yield* Display;
+
+  const townSquareService = yield* TownSquare;
+
+  yield* clearScreen;
+  yield* display`Game started`;
+  yield* newLine;
+
+  yield* townSquareService.intro;
+  yield* townSquareService.townSquare.pipe(
+    Effect.catchTags({
+      PlayerDeadException: () =>
+        Effect.gen(function* () {
+          yield* Player.updateGold(() => 0);
+          const maxHealth = yield* Player.getMaxHealth;
+          yield* Player.updateHealth(() => maxHealth);
+          yield* displayYield`You died, you lost your gold, the game will restart`;
+
+          yield* game;
+        }),
+    })
+  );
+});
+
+const gameSetup: Effect.Effect<
+  void,
+  never,
+  SaveGame | FileSystem.FileSystem | Player | Display | Terminal.Terminal
+> = Effect.gen(function* () {
   const { display, newLine, choice, displayYield } = yield* Display;
 
   const terminal = yield* Terminal.Terminal;
-  const ref = yield* Player;
+  const player = yield* Player;
 
   yield* display`Welcome to the dragon game`;
   yield* newLine;
 
   yield* display`Would you like to configure your character or quickly start the game?
+  [L] load saved game
   [C] configure
   [R] random`;
 
   yield* choice(
     {
+      l: Effect.gen(function* () {
+        yield* SaveGame.loadGame().pipe(
+          Effect.tapError((error) =>
+            Effect.all([
+              newLine,
+              display(k.red(`Game loading filed... (${error._tag})`)),
+              newLine,
+            ])
+          ),
+          Effect.orElse(() => gameSetup),
+          Effect.zipRight(player.stats)
+        );
+      }),
       c: Effect.gen(function* () {
         yield* display`What's your name?`;
 
@@ -66,7 +138,7 @@ const gameSetup = Effect.gen(function* () {
           );
 
         const userName = yield* readName;
-        yield* Ref.update(ref.data, (data) => ({ ...data, name: userName }));
+        yield* Ref.update(player.data, (data) => ({ ...data, name: userName }));
 
         yield* newLine;
 
@@ -81,7 +153,7 @@ const gameSetup = Effect.gen(function* () {
         `;
 
         const setPlayerClass = (c: PlayerClass) =>
-          Ref.update(ref.data, (data) => ({
+          Ref.update(player.data, (data) => ({
             ...data,
             class: c,
           }));
@@ -94,13 +166,13 @@ const gameSetup = Effect.gen(function* () {
         });
       }),
       r: Effect.gen(function* () {
-        yield* Ref.update(ref.data, (data) => ({
+        yield* Ref.update(player.data, (data) => ({
           ...data,
           name: "random-name",
           class:
             playerClasses[Math.floor(Math.random() * playerClasses.length)],
         }));
-        yield* Player.stats;
+        yield* player.stats;
         yield* displayYield();
       }),
     },
@@ -114,13 +186,14 @@ export const runGame = Effect.all([
   game,
 ]).pipe(
   Effect.asVoid,
-  Effect.provide(Player.Default),
   Effect.provide(TownSquare.Default),
   Effect.provide(Forest.Default),
   Effect.provide(Healer.Default),
   Effect.provide(Inn.Default),
-  Effect.provide(Bank.Default),
   Effect.provide(Weaponsmith.Default),
   Effect.provide(Armorsmith.Default),
+  Effect.provide(SaveGame.Default),
+  Effect.provide(Bank.Default),
+  Effect.provide(Player.Default),
   Effect.provide(Display.Default)
-) as Effect.Effect<void, never, never>;
+);

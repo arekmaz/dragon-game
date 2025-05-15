@@ -1,17 +1,29 @@
-import { Data, Effect, pipe, Ref, String } from "effect";
+import { Data, Effect, pipe, Ref, Schema, String } from "effect";
 import { Display, k } from "./display.ts";
-import { type Weapon } from "./weaponsmith.ts";
-
-type EqItem = { type: "weapon"; name: Weapon };
-
-type Eq = {
-  rightHand: Weapon | null;
-  leftHand: Weapon | null;
-  items: Array<EqItem>;
-};
+import { WeaponSchema } from "./weaponsmith.ts";
 
 export const playerClasses = ["mage", "assassin", "warrior", "archer"] as const;
 export type PlayerClass = (typeof playerClasses)[number];
+
+class EqItemSchema extends Schema.Class<EqItemSchema>("EqItemSchema")({
+  type: Schema.Literal("weapon"),
+  name: WeaponSchema,
+}) {}
+
+class EqSchema extends Schema.Class<EqSchema>("EqSchema")({
+  rightHand: Schema.NullOr(WeaponSchema),
+  leftHand: Schema.NullOr(WeaponSchema),
+  items: Schema.Data(Schema.Array(EqItemSchema)),
+}) {}
+
+export class PlayerData extends Schema.Class<PlayerData>("PlayerSchema")({
+  name: Schema.NonEmptyString,
+  health: Schema.NonNegativeInt,
+  eq: EqSchema,
+  gold: Schema.NonNegativeInt,
+  exp: Schema.NonNegativeInt,
+  class: Schema.Literal(...playerClasses),
+}) {}
 
 const makeDisplayClass = (c: PlayerClass) => pipe(c, String.capitalize, k.cyan);
 
@@ -48,23 +60,22 @@ export class Player extends Effect.Service<Player>()("Player", {
 
     const startingLvl = lvlByExp(startingExp);
 
-    const data = yield* Ref.make<{
-      name: string;
-      health: number;
-      eq: Eq;
-      gold: number;
-      exp: number;
-      class: PlayerClass;
-    }>({
-      class: "warrior",
-      name: "Player",
-      health: maxHealth(startingLvl),
-      eq: { rightHand: "stick", leftHand: null, items: [] },
-      gold: 500,
-      exp:
-        startingExp -
-        requiredLvlExp.slice(0, startingLvl - 1).reduce((a, b) => a + b, 0),
-    });
+    const data = yield* Ref.make<PlayerData>(
+      PlayerData.make({
+        class: "warrior",
+        name: "Player",
+        health: maxHealth(startingLvl),
+        eq: EqSchema.make({
+          rightHand: "stick",
+          leftHand: null,
+          items: Data.array([]),
+        }),
+        gold: 500,
+        exp:
+          startingExp -
+          requiredLvlExp.slice(0, startingLvl - 1).reduce((a, b) => a + b, 0),
+      })
+    );
 
     const stats = Effect.gen(function* () {
       const { name, class: playerClass, health, eq, gold, exp } = yield* data;
@@ -137,7 +148,7 @@ export class Player extends Effect.Service<Player>()("Player", {
 
     const increaseHealth = (health: number) => updateHealth((h) => h + health);
 
-    const updateEq = (fn: (o: Eq) => Eq) =>
+    const updateEq = (fn: (o: EqSchema) => EqSchema) =>
       Ref.modify(data, (o) => [
         { before: o.eq, after: fn(o.eq) },
         { ...o, eq: fn(o.eq) },

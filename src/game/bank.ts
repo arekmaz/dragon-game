@@ -118,6 +118,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
     return {
       intro,
       bank,
+      bankBalanceRef,
     };
   }),
   dependencies: [Display.Default, NodeTerminal.layer],

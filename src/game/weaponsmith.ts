@@ -1,4 +1,4 @@
-import { Effect, pipe, String, Record } from "effect";
+import { Effect, pipe, String, Record, Schema } from "effect";
 import { Display, k } from "./display.ts";
 import { Player } from "./player.ts";
 
@@ -15,6 +15,10 @@ export const weapons = {
   greataxe: 45,
   greathalberd: 60,
 };
+
+export const WeaponSchema = Schema.Literal(
+  ...(Object.keys(weapons) as Array<Weapon>)
+);
 
 export type Weapon = keyof typeof weapons;
 

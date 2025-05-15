@@ -124,42 +124,68 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
   [S] Stats
   [R] Run for your life`;
 
+          const attack = Effect.gen(function* () {
+            const dmg = yield* playerStrike;
+
+            yield* newLine;
+
+            yield* display`You strike ${k.red(
+              opponent.name
+            )}, dealing ${k.red(dmg)} damage.`;
+
+            if (yield* opIsAlive) {
+              const opDmg = yield* opStrike.pipe(
+                Effect.tapError(
+                  (e) =>
+                    display`${k.red(
+                      opponent.name
+                    )}, strikes you back, dealing ${k.red(
+                      e.amount
+                    )} damage and killing you.`
+                )
+              );
+
+              yield* display`${k.red(
+                opponent.name
+              )}, strikes you back, dealing ${k.red(opDmg)} damage.`;
+
+              yield* newLine;
+
+              yield* fightStats;
+
+              yield* move;
+              return;
+            }
+
+            const gainedExp = yield* Random.nextIntBetween(
+              Math.round(opponent.maxHealth * 0.5),
+              Math.round(opponent.maxHealth * 1.5)
+            );
+            const gainedGold = yield* Random.nextIntBetween(
+              Math.round(opponent.power * 0.5),
+              Math.round(opponent.power * 1.5)
+            );
+
+            const gainedLevels = yield* Player.addExp(gainedExp);
+            yield* Player.updateGold((g) => g + gainedGold);
+
+            yield* display`You killed ${k.red(
+              opponent.name
+            )} gaining ${gainedExp} exp and ${gainedGold} gold`;
+            if (gainedLevels > 0) {
+              yield* display`You gained a new level: ${k
+                .bold()
+                .yellow("LEVEL " + String(yield* Player.level))}`;
+            }
+
+            yield* newLine;
+            yield* displayYield();
+            yield* newLine;
+          });
+
           yield* choice(
             {
-              a: Effect.gen(function* () {
-                const dmg = yield* playerStrike;
-
-                yield* newLine;
-
-                yield* display`You strike ${k.red(
-                  opponent.name
-                )}, dealing ${k.red(dmg)} damage.`;
-
-                if (!(yield* opIsAlive)) {
-                  return;
-                }
-
-                const opDmg = yield* opStrike.pipe(
-                  Effect.tapError(
-                    (e) =>
-                      display`${k.red(
-                        opponent.name
-                      )}, strikes you back, dealing ${k.red(
-                        e.amount
-                      )} damage and killing you.`
-                  )
-                );
-
-                yield* display`${k.red(
-                  opponent.name
-                )}, strikes you back, dealing ${k.red(opDmg)} damage.`;
-
-                yield* newLine;
-
-                yield* fightStats;
-
-                yield* move;
-              }),
+              a: attack,
 
               s: Effect.all([fightStats, move]),
 
@@ -180,35 +206,6 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       if (yield* opIsAlive) {
         yield* move;
       }
-
-      if (yield* opIsAlive) {
-        yield* Effect.die("Opponent should be dead at this point");
-      }
-
-      const gainedExp = yield* Random.nextIntBetween(
-        Math.round(opponent.maxHealth * 0.5),
-        Math.round(opponent.maxHealth * 1.5)
-      );
-      const gainedGold = yield* Random.nextIntBetween(
-        Math.round(opponent.power * 0.5),
-        Math.round(opponent.power * 1.5)
-      );
-
-      const gainedLevels = yield* Player.addExp(gainedExp);
-      yield* Player.updateGold((g) => g + gainedGold);
-
-      yield* display`You killed ${k.red(
-        opponent.name
-      )} gaining ${gainedExp} exp and ${gainedGold} gold`;
-      if (gainedLevels > 0) {
-        yield* display`You gained a new level: ${k
-          .bold()
-          .yellow("LEVEL " + String(yield* Player.level))}`;
-      }
-
-      yield* newLine;
-      yield* displayYield();
-      yield* newLine;
     });
 
     return {
