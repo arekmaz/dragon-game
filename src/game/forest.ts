@@ -8,7 +8,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
     const { display, newLine, choice, clearScreen, displayYield } =
       yield* Display;
 
-    const forestIntro = Effect.zipRight(
+    const intro = Effect.zipRight(
       display`You arrive at the deep dark forest`,
       newLine
     );
@@ -30,7 +30,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
         yield* choice(
           {
             l: Effect.all([fight, clearScreen, forestBackMsg, forest]),
-            s: Effect.all([Player.use((s) => s.stats), forest]),
+            s: Effect.all([Player.stats, forest]),
             r: Effect.void,
           },
           { defaultOption: "s" }
@@ -58,9 +58,14 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
         opponent.power
       }, health: ${yield* opRef}/${opponent.maxHealth}`;
 
+      const rightHandWeapon = yield* Player.rightHand;
+      const leftHandWeapon = yield* Player.leftHand;
+
       const playerStrike = Random.nextIntBetween(
         1,
-        lvl * 3 + weapons[yield* Player.weapon]
+        lvl * 3 +
+          (rightHandWeapon ? weapons[rightHandWeapon] : 0) +
+          (leftHandWeapon ? weapons[leftHandWeapon] : 0)
       ).pipe(Effect.tap((dmg) => Ref.update(opRef, (h) => Math.max(h - dmg))));
 
       const opStrike = Random.nextIntBetween(1, opponent.power).pipe(
@@ -71,7 +76,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
       const fightStats = Effect.gen(function* () {
         yield* display`
-      ${yield* Player.displayName}: ${yield* Player.health}/${yield* Player.maxHealth}
+      ${yield* Player.displayName}: ${yield* Player.health}/${yield* Player.getMaxHealth}
       ${k.red(opponent.name)}: ${yield* opRef}/${opponent.maxHealth}`;
       });
 
@@ -207,7 +212,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
     });
 
     return {
-      forestIntro,
+      intro,
       forestBackMsg,
       forest,
     };

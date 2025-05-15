@@ -22,7 +22,7 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
     const weaponsmith = yield* Weaponsmith;
     const armorsmith = yield* Armorsmith;
 
-    const townSquareIntro = Effect.zipRight(
+    const intro = Effect.zipRight(
       display`
         Welcome to the Town Square, where do you want to go?
       `,
@@ -53,45 +53,54 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
           {
             f: Effect.all([
               clearScreen,
-              forest.forestIntro,
+              forest.intro,
               forest.forest,
+              clearScreen,
               backToTownSquare,
               townSquare,
             ]),
             w: Effect.all([
               clearScreen,
               weaponsmith.intro,
+              weaponsmith.weaponsmith,
+              clearScreen,
               backToTownSquare,
               townSquare,
             ]),
             a: Effect.all([
               clearScreen,
               armorsmith.intro,
+              display`not available yet`,
+              Effect.sleep(1000),
+              clearScreen,
               backToTownSquare,
               townSquare,
             ]),
             b: Effect.all([
               clearScreen,
-              bank.bankIntro,
+              bank.intro,
               bank.bank,
+              clearScreen,
               backToTownSquare,
               townSquare,
             ]),
             h: Effect.all([
               clearScreen,
-              healer.healerIntro,
+              healer.intro,
               healer.healer,
+              clearScreen,
               backToTownSquare,
               townSquare,
             ]),
             i: Effect.all([
               clearScreen,
-              inn.innIntro,
+              inn.intro,
               inn.inn,
+              clearScreen,
               backToTownSquare,
               townSquare,
             ]),
-            s: Effect.all([Player.use((s) => s.stats), townSquare]),
+            s: Effect.all([Player.stats, townSquare]),
             q: Effect.all([display`quitting...`, Effect.sleep(1000)]),
           },
           { defaultOption: "s" }
@@ -99,7 +108,7 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
       });
 
     return {
-      townSquareIntro,
+      intro,
       townSquare,
     };
   }),

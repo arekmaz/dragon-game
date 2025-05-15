@@ -5,7 +5,7 @@ import { Player } from "./player.ts";
 export class Inn extends Effect.Service<Inn>()("Inn", {
   effect: Effect.gen(function* () {
     const { display, newLine, choice } = yield* Display;
-    const innIntro = display`Welcome to the Town's Inn, it's awfully crowded today`;
+    const intro = display`Welcome to the Town's Inn, it's awfully crowded today`;
 
     const inn: Effect.Effect<void, never, Player> = Effect.gen(function* () {
       yield* newLine;
@@ -18,7 +18,7 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
       yield* choice(
         {
           n: display`news board`.pipe(Effect.zipRight(inn)),
-          s: Player.use((s) => s.stats).pipe(Effect.zipRight(inn)),
+          s: Player.stats.pipe(Effect.zipRight(inn)),
           r: Effect.void,
         },
         { defaultOption: "s" }
@@ -26,7 +26,7 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
     });
 
     return {
-      innIntro,
+      intro,
       inn,
     };
   }),

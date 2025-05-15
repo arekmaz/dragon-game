@@ -10,7 +10,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
     const terminal = yield* Terminal;
     const bankBalanceRef = yield* Ref.make(0);
 
-    const bankIntro = display`Welcome to the bank, how can I help you?`;
+    const intro = display`Welcome to the bank, how can I help you?`;
 
     const depositGold = Effect.gen(function* () {
       const playerGold = yield* Player.gold;
@@ -108,7 +108,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
           d: Effect.all([newLine, depositGold, bank]),
           w: Effect.all([newLine, withdrawAllGold, bank]),
           c: Effect.all([newLine, withdrawSomeGold, bank]),
-          s: Effect.all([Player.use((s) => s.stats), bank]),
+          s: Effect.all([Player.stats, bank]),
           r: Effect.void,
         },
         { defaultOption: "s" }
@@ -116,7 +116,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
     });
 
     return {
-      bankIntro,
+      intro,
       bank,
     };
   }),

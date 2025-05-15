@@ -20,13 +20,13 @@ const game: Effect.Effect<void, never, TownSquare | Player | Display> =
     yield* display`Game started`;
     yield* newLine;
 
-    yield* townSquareService.townSquareIntro;
+    yield* townSquareService.intro;
     yield* townSquareService.townSquare.pipe(
       Effect.catchTags({
         PlayerDeadException: () =>
           Effect.gen(function* () {
             yield* Player.updateGold(() => 0);
-            const maxHealth = yield* Player.maxHealth;
+            const maxHealth = yield* Player.getMaxHealth;
             yield* Player.updateHealth(() => maxHealth);
             yield* displayYield`You died, you lost your gold, the game will restart`;
 
@@ -100,7 +100,7 @@ const gameSetup = Effect.gen(function* () {
           class:
             playerClasses[Math.floor(Math.random() * playerClasses.length)],
         }));
-        yield* Player.use((s) => s.stats);
+        yield* Player.stats;
         yield* displayYield();
       }),
     },

@@ -2,7 +2,13 @@ import { Data, Effect, pipe, Ref, String } from "effect";
 import { Display, k } from "./display.ts";
 import { type Weapon } from "./weaponsmith.ts";
 
-type Eq = { weapon: Weapon };
+type EqItem = { type: "weapon"; name: Weapon };
+
+type Eq = {
+  rightHand: Weapon | null;
+  leftHand: Weapon | null;
+  items: Array<EqItem>;
+};
 
 export const playerClasses = ["mage", "assassin", "warrior", "archer"] as const;
 export type PlayerClass = (typeof playerClasses)[number];
@@ -53,7 +59,7 @@ export class Player extends Effect.Service<Player>()("Player", {
       class: "warrior",
       name: "Player",
       health: maxHealth(startingLvl),
-      eq: { weapon: "stick" },
+      eq: { rightHand: "stick", leftHand: null, items: [] },
       gold: 500,
       exp:
         startingExp -
@@ -79,8 +85,14 @@ export class Player extends Effect.Service<Player>()("Player", {
         Health: ${health}/${maxHealth(level)}
         Level: ${level}
         Exp: ${currentLevelExp}/${getExpRequiredForLvl(level)}
-        Equipped weapon: ${eq.weapon}
-        Gold: ${gold}
+        Right hand: ${eq.rightHand ?? "-"}
+        Left hand: ${eq.leftHand ?? "-"}
+        Gold: ${gold}${
+        eq.items.length > 0
+          ? `
+          Eq: ${eq.items.map((i) => i.type + " " + i.name).join("\n")}`
+          : ""
+      }
       `;
       yield* newLine;
 
@@ -89,53 +101,72 @@ export class Player extends Effect.Service<Player>()("Player", {
       yield* newLine;
     });
 
-    return { data, stats };
-  }),
+    const displayName = Effect.map(data, (d) => makeDisplayName(d.name));
 
-  dependencies: [Display.Default],
-}) {
-  static data = this.use((s) => s.data);
+    const eq = Effect.map(data, (d) => d.eq);
+    const rightHand = Effect.map(data, (d) => d.eq.rightHand);
+    const leftHand = Effect.map(data, (d) => d.eq.leftHand);
+    const level = Effect.map(data, (d) => lvlByExp(d.exp));
+    const exp = Effect.map(data, (d) => d.exp);
 
-  static displayName = Effect.map(this.data, (d) => makeDisplayName(d.name));
-  static class = Effect.map(this.data, (d) => d.class);
-
-  static eq = Effect.map(this.data, (d) => d.eq);
-  static weapon = Effect.map(this.data, (d) => d.eq.weapon);
-
-  static level = Effect.map(this.data, (d) => lvlByExp(d.exp));
-  static exp = Effect.map(this.data, (d) => d.exp);
-  // returns how many level-ups did player get
-  static addExp = (e: number) =>
-    this.use((d) =>
-      Ref.modify(d.data, (o) => [
+    // returns how many level-ups did player get
+    const addExp = (e: number) =>
+      Ref.modify(data, (o) => [
         lvlByExp(o.exp + e) - lvlByExp(o.exp),
         { ...o, exp: o.exp + e },
-      ])
-    );
+      ]);
 
-  static gold = Effect.map(this.data, (d) => d.gold);
-  static updateGold = (fn: (o: number) => number) =>
-    this.use((d) => Ref.update(d.data, (o) => ({ ...o, gold: fn(o.gold) })));
+    const gold = Effect.map(data, (d) => d.gold);
+    const updateGold = (fn: (o: number) => number) =>
+      Ref.update(data, (o) => ({ ...o, gold: fn(o.gold) }));
 
-  static health = Effect.map(this.data, (d) => d.health);
-  static isAlive = Effect.map(this.data, (d) => d.health > 0);
-  static maxHealth = Effect.map(this.data, (d) => maxHealth(lvlByExp(d.exp)));
-  static updateHealth = (fn: (o: number) => number) =>
-    this.use((d) =>
-      Ref.modify(d.data, (o) => [fn(o.health), { ...o, health: fn(o.health) }])
-    );
+    const health = Effect.map(data, (d) => d.health);
+    const isAlive = Effect.map(data, (d) => d.health > 0);
+    const getMaxHealth = Effect.map(data, (d) => maxHealth(lvlByExp(d.exp)));
 
-  static decreaseHealth = (dmg: number) =>
-    this.updateHealth((h) => h - dmg).pipe(
-      Effect.filterOrFail(
-        (h) => h > 0,
-        () => new PlayerDeadException({ reason: "damage", amount: dmg })
-      )
-    );
+    const updateHealth = (fn: (o: number) => number) =>
+      Ref.modify(data, (o) => [fn(o.health), { ...o, health: fn(o.health) }]);
 
-  static increaseHealth = (health: number) =>
-    this.updateHealth((h) => h + health);
-}
+    const decreaseHealth = (dmg: number) =>
+      updateHealth((h) => h - dmg).pipe(
+        Effect.filterOrFail(
+          (h) => h > 0,
+          () => new PlayerDeadException({ reason: "damage", amount: dmg })
+        )
+      );
+
+    const increaseHealth = (health: number) => updateHealth((h) => h + health);
+
+    const updateEq = (fn: (o: Eq) => Eq) =>
+      Ref.modify(data, (o) => [
+        { before: o.eq, after: fn(o.eq) },
+        { ...o, eq: fn(o.eq) },
+      ]);
+
+    return {
+      data,
+      stats,
+      displayName,
+      eq,
+      rightHand,
+      leftHand,
+      level,
+      exp,
+      addExp,
+      gold,
+      updateGold,
+      health,
+      isAlive,
+      getMaxHealth,
+      updateHealth,
+      decreaseHealth,
+      increaseHealth,
+      updateEq,
+    };
+  }),
+  accessors: true,
+  dependencies: [Display.Default],
+}) {}
 
 export class PlayerDeadException extends Data.TaggedError(
   "PlayerDeadException"
