@@ -90,7 +90,7 @@ export class Player extends Effect.Service<Player>()("Player", {
         Gold: ${gold}${
         eq.items.length > 0
           ? `
-          Eq: ${eq.items.map((i) => i.type + " " + i.name).join("\n")}`
+          Eq: ${eq.items.map((i) => `${i.name}(${i.type})`).join("\n")}`
           : ""
       }
       `;

@@ -101,17 +101,20 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
           playerLevel >= weaponMinLevel[weapon as Weapon] &&
           !items.some((i) => i.type === "weapon" && i.name === weapon) &&
           rightHandWeapon !== weapon &&
-          leftHandWeapon !== weapon,
+          leftHandWeapon !== weapon
       );
 
       if (weaponsToBuy.length === 0) {
+        yield* newLine;
         yield* display`No weapons available to buy`;
+        yield* newLine;
         return;
       }
 
       const chooseWeapon = Effect.all([
         newLine,
         display`Weapons available to buy (Q to cancel):
+
       ${weaponsToBuy
         .map((weapon, i) => {
           const weaponName = pipe(weapon, String.capitalize, k.white);
@@ -134,6 +137,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                     const cost = weaponCost[weapon as Weapon];
 
                     if (playerGold < cost) {
+                      yield* newLine;
                       yield* display`You don't have enough gold to buy ${weapon}`;
                       return;
                     }
@@ -147,12 +151,14 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                       ],
                     }));
 
+                    yield* newLine;
                     yield* display`You bought ${weapon}, paid ${cost} gold`;
                   }),
-                ] as const,
+                ] as const
             ),
             ["q", Effect.void],
           ]),
+          { defaultOption: "q" }
         ),
       ]);
 
@@ -175,9 +181,9 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
             s: Effect.all([Player.stats, weaponsmith]),
             r: Effect.void,
           },
-          { defaultOption: "s" },
+          { defaultOption: "s" }
         );
-      },
+      }
     );
 
     return { intro, weaponsmith };

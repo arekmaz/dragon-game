@@ -121,7 +121,7 @@ export class Display extends Effect.Service<Display>()("Display", {
           yield* newLine;
         }
 
-        yield* displayRaw` ${input} `;
+        yield* displayRaw`${opts.defaultOption ? " " : ""}${input} `;
         yield* newLine;
 
         const result = yield* choices[input];
