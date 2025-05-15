@@ -139,7 +139,8 @@ export class Display extends Effect.Service<Display>()("Display", {
             String.repeat(cols),
             String.concat(EOL),
             color,
-            terminal.display
+            terminal.display,
+            Effect.orDie
           )
         )
       );
