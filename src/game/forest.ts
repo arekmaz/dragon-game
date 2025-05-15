@@ -71,7 +71,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       const fightStats = Effect.gen(function* () {
         yield* display`
       ${yield* Player.displayName}: ${yield* Player.health}/${yield* Player.maxHealth}
-      ${opponent.name}: ${yield* opRef}/${opponent.maxHealth}`;
+      ${k.red(opponent.name)}: ${yield* opRef}/${opponent.maxHealth}`;
       });
 
       yield* clearScreen;
@@ -168,36 +168,40 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
             },
             { defaultOption: "s" }
           );
-
-          yield* newLine;
         });
 
       if (yield* opIsAlive) {
         yield* move;
       }
 
-      if (!(yield* opIsAlive)) {
-        const gainedExp = yield* Random.nextIntBetween(
-          Math.round(opponent.maxHealth * 0.5),
-          Math.round(opponent.maxHealth * 1.5)
-        );
-        const gainedGold = yield* Random.nextIntBetween(
-          Math.round(opponent.power * 0.5),
-          Math.round(opponent.power * 1.5)
-        );
-
-        const gainedLevels = yield* Player.addExp(gainedExp);
-        yield* Player.updateGold((g) => g + gainedGold);
-        yield* display`You killed ${opponent.name} gaining ${gainedExp} exp and ${gainedGold} gold`;
-        if (gainedLevels > 0) {
-          yield* display`You gained a new level: LEVEL ${k
-            .bold()
-            .yellow(yield* Player.level)}`;
-        }
-        yield* newLine;
-        yield* displayYield();
-        yield* newLine;
+      if (yield* opIsAlive) {
+        yield* Effect.die("Opponent should be dead at this point");
       }
+
+      const gainedExp = yield* Random.nextIntBetween(
+        Math.round(opponent.maxHealth * 0.5),
+        Math.round(opponent.maxHealth * 1.5)
+      );
+      const gainedGold = yield* Random.nextIntBetween(
+        Math.round(opponent.power * 0.5),
+        Math.round(opponent.power * 1.5)
+      );
+
+      const gainedLevels = yield* Player.addExp(gainedExp);
+      yield* Player.updateGold((g) => g + gainedGold);
+
+      yield* display`You killed ${k.red(
+        opponent.name
+      )} gaining ${gainedExp} exp and ${gainedGold} gold`;
+      if (gainedLevels > 0) {
+        yield* display`You gained a new level: ${k
+          .bold()
+          .yellow("LEVEL " + String(yield* Player.level))}`;
+      }
+
+      yield* newLine;
+      yield* displayYield();
+      yield* newLine;
     });
 
     return {

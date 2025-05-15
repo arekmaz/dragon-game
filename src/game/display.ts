@@ -1,9 +1,12 @@
 import { Terminal } from "@effect/platform";
-import { Effect } from "effect";
+import { Effect, pipe, String } from "effect";
+import { EOL } from "node:os";
 
 import k from "kleur";
 
 export { k };
+
+export type Color = k.Color;
 
 export class Display extends Effect.Service<Display>()("Display", {
   effect: Effect.gen(function* () {
@@ -14,7 +17,7 @@ export class Display extends Effect.Service<Display>()("Display", {
         return s
           .replace(/^[\n\r]+/, "")
           .replace(/^([\s])+/gm, "")
-          .replace(/\n?$/, "\n");
+          .replace(/\n?$/, EOL);
       }
 
       let result = "";
@@ -31,7 +34,7 @@ export class Display extends Effect.Service<Display>()("Display", {
       return result
         .replace(/^[\n\r]+/, "")
         .replace(/^([ ])+/gm, "")
-        .replace(/\n?$/, "\n");
+        .replace(/\n?$/, EOL);
     };
 
     const displayRaw = function (
@@ -40,7 +43,9 @@ export class Display extends Effect.Service<Display>()("Display", {
     ) {
       return Effect.orDie(
         Effect.gen(function* () {
-          yield* terminal.display(k.green(String.raw({ raw: s }, ...args)));
+          yield* terminal.display(
+            k.green(globalThis.String.raw({ raw: s }, ...args))
+          );
         })
       );
     };
@@ -126,6 +131,19 @@ export class Display extends Effect.Service<Display>()("Display", {
 
     const clearScreen = Effect.sync(console.clear);
 
+    const horizontalFullLine = (color = k.white) =>
+      terminal.columns.pipe(
+        Effect.flatMap((cols) =>
+          pipe(
+            "-",
+            String.repeat(cols),
+            String.concat(EOL),
+            color,
+            terminal.display
+          )
+        )
+      );
+
     return {
       display,
       displayYield,
@@ -133,6 +151,7 @@ export class Display extends Effect.Service<Display>()("Display", {
       choice,
       clearScreen,
       displayRaw,
+      horizontalFullLine,
     };
   }),
 }) {}

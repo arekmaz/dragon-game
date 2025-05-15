@@ -23,7 +23,7 @@ type Eq = { weapon: Weapon };
 export const playerClasses = ["mage", "assassin", "warrior", "archer"] as const;
 type PlayerClass = (typeof playerClasses)[number];
 
-const makeDisplayClass = (c: PlayerClass) => pipe(c, String.capitalize, k.red);
+const makeDisplayClass = (c: PlayerClass) => pipe(c, String.capitalize, k.cyan);
 
 const maxHealth = (level: number) => 20 + (level - 1) * 2;
 
@@ -50,11 +50,11 @@ const lvlByExp = (exp: number) => {
 
 const startingExp = 0;
 
-const makeDisplayName = (n: string) => pipe(n, String.capitalize, k.cyan);
+const makeDisplayName = (n: string) => pipe(n, String.capitalize, k.white);
 
 export class Player extends Effect.Service<Player>()("Player", {
   effect: Effect.gen(function* () {
-    const { display, newLine } = yield* Display;
+    const { display, newLine, horizontalFullLine } = yield* Display;
 
     const startingLvl = lvlByExp(startingExp);
 
@@ -79,10 +79,11 @@ export class Player extends Effect.Service<Player>()("Player", {
     const stats = Effect.gen(function* () {
       const { name, class: playerClass, health, eq, gold, exp } = yield* data;
       yield* newLine;
-      yield* display`--------------------------------`;
+      yield* horizontalFullLine();
       yield* display`${makeDisplayName(name)}'s stats:`;
-      yield* display`--------------------------------`;
+      yield* horizontalFullLine();
       yield* newLine;
+
       const level = lvlByExp(exp);
 
       const currentLevelExp =
@@ -97,6 +98,9 @@ export class Player extends Effect.Service<Player>()("Player", {
         Equipped weapon: ${eq.weapon}
         Gold: ${gold}
       `;
+      yield* newLine;
+
+      yield* horizontalFullLine();
 
       yield* newLine;
     });
