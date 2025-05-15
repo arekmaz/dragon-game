@@ -153,30 +153,41 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
 
                     yield* newLine;
                     yield* display`You bought ${weapon}, paid ${cost} gold`;
+                    yield* newLine;
 
                     yield* display`Do you want to equip it?
+
                     [L] left hand
                     [R] right hand
                     [Q] cancel
                     `;
 
-                    yield* choice({
-                      l: Effect.all([
-                        Player.updateEq((eq) => ({
-                          ...eq,
-                          leftHand: weapon as Weapon,
-                        })),
-                        display`Equipped on left hand`,
-                      ]),
-                      r: Effect.all([
-                        Player.updateEq((eq) => ({
-                          ...eq,
-                          rightHand: weapon as Weapon,
-                        })),
-                        display`Equipped on right hand`,
-                      ]),
-                      q: Effect.void,
-                    });
+                    yield* choice(
+                      {
+                        l: Effect.all([
+                          Player.updateEq((eq) => ({
+                            ...eq,
+                            leftHand: weapon as Weapon,
+                            items: eq.items.filter(
+                              (i) => !(i.type === "weapon" && i.name === weapon)
+                            ),
+                          })),
+                          display`Equipped on left hand`,
+                        ]),
+                        r: Effect.all([
+                          Player.updateEq((eq) => ({
+                            ...eq,
+                            rightHand: weapon as Weapon,
+                            items: eq.items.filter(
+                              (i) => !(i.type === "weapon" && i.name === weapon)
+                            ),
+                          })),
+                          display`Equipped on right hand`,
+                        ]),
+                        q: Effect.void,
+                      },
+                      { defaultOption: "q" }
+                    );
                   }),
                 ] as const
             ),
