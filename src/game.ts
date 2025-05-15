@@ -38,7 +38,6 @@ export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
           player: yield* player.data.get,
           bankBalance: yield* bank.bankBalanceRef.get,
         });
-        console.log(saveData);
 
         yield* fs.writeFileString(fileName, saveData);
       });
