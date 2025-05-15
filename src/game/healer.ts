@@ -38,8 +38,8 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
               },
               { ...data, health: playerMaxHealth, gold: data.gold - cost },
             ];
-          }),
-        ),
+          })
+        )
       );
 
       const healSpecified = Effect.gen(function* () {
@@ -47,7 +47,7 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
 
         const maxPointsAffordable = Math.min(
           Math.floor(data.gold / healthPointCost),
-          playerMaxHealth - data.health,
+          playerMaxHealth - data.health
         );
 
         yield* display`Enter the amount of health points (you can restore max ${maxPointsAffordable} points):`;
@@ -58,15 +58,15 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
               Schema.decode(
                 Schema.NumberFromString.pipe(
                   Schema.int(),
-                  Schema.between(0, maxPointsAffordable),
-                ),
-              ),
+                  Schema.between(0, maxPointsAffordable)
+                )
+              )
             ),
             Effect.tapError(
               () =>
-                display`Incorrect amount, enter a number between 0-${maxPointsAffordable}`,
+                display`Incorrect amount, enter a number between 0-${maxPointsAffordable}`
             ),
-            Effect.orElse(() => readAmount),
+            Effect.orElse(() => readAmount)
           );
 
         const healthToRestore = yield* readAmount;
@@ -90,23 +90,23 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
           h: healFull.pipe(
             Effect.tap(
               ({ cost, restoredHealth }) =>
-                display`Restored ${restoredHealth} health, ${cost} gold paid`,
+                display`Restored ${restoredHealth} health, ${cost} gold paid`
             ),
             Effect.zipRight(newLine),
-            Effect.zipRight(healer),
+            Effect.zipRight(healer)
           ),
           a: healSpecified.pipe(
             Effect.tap(
               ({ cost, restoredHealth }) =>
-                display`Restored ${restoredHealth} health, ${cost} gold paid`,
+                display`Restored ${restoredHealth} health, ${cost} gold paid`
             ),
             Effect.zipRight(newLine),
-            Effect.zipRight(healer),
+            Effect.zipRight(healer)
           ),
           s: Player.stats.pipe(Effect.zipRight(healer)),
           r: Effect.void,
         },
-        { defaultOption: "s" },
+        { defaultOption: "s" }
       );
     });
 

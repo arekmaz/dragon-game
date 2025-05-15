@@ -15,7 +15,8 @@ export class QuitTownSquareException extends Data.TaggedError(
 
 export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
   effect: Effect.gen(function* () {
-    const { display, newLine, choice, clearScreen } = yield* Display;
+    const { display, newLine, choice, clearScreen, displayYield } =
+      yield* Display;
     const forest = yield* Forest;
     const healer = yield* Healer;
     const inn = yield* Inn;
@@ -75,7 +76,7 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
             clearScreen,
             armorsmith.intro,
             display`not available yet`,
-            Effect.sleep(1000),
+            displayYield(),
             clearScreen,
             backToTownSquare,
             townSquare,

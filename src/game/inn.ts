@@ -36,7 +36,6 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
               ),
               newLine,
               Effect.sleep(1000),
-              newLine,
               display`you wake up quickly, adventure awaits...`,
               Effect.sleep(1000),
               inn,
