@@ -165,23 +165,45 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                     yield* choice(
                       {
                         l: Effect.all([
-                          Player.updateEq((eq) => ({
-                            ...eq,
-                            leftHand: weapon as Weapon,
-                            items: eq.items.filter(
-                              (i) => !(i.type === "weapon" && i.name === weapon)
-                            ),
-                          })),
+                          Player.updateEq((eq) =>
+                            eq.leftHand
+                              ? {
+                                  ...eq,
+                                  leftHand: weapon as Weapon,
+                                  items: [
+                                    ...eq.items,
+                                    { type: "weapon", name: eq.leftHand },
+                                  ],
+                                }
+                              : {
+                                  ...eq,
+                                  leftHand: weapon as Weapon,
+                                }
+                          ),
                           display`Equipped on left hand`,
                         ]),
                         r: Effect.all([
-                          Player.updateEq((eq) => ({
-                            ...eq,
-                            rightHand: weapon as Weapon,
-                            items: eq.items.filter(
-                              (i) => !(i.type === "weapon" && i.name === weapon)
-                            ),
-                          })),
+                          Player.updateEq((eq) =>
+                            eq.rightHand
+                              ? {
+                                  ...eq,
+                                  rightHand: weapon as Weapon,
+                                  items: [
+                                    ...eq.items,
+                                    { type: "weapon", name: eq.rightHand },
+                                  ],
+                                }
+                              : {
+                                  ...eq,
+                                  rightHand: weapon as Weapon,
+                                  items: eq.items.filter(
+                                    (i) =>
+                                      !(
+                                        i.type === "weapon" && i.name === weapon
+                                      )
+                                  ),
+                                }
+                          ),
                           display`Equipped on right hand`,
                         ]),
                         q: Effect.void,
