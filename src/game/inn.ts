@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { Display } from "./display.ts";
+import { Display, k } from "./display.ts";
 import { Player } from "./player.ts";
 import { SaveGame } from "../game.ts";
 
@@ -21,6 +21,7 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
         yield* choice(
           {
             l: Effect.all([
+              newLine,
               display`you're very tired, you go to sleep early`,
               newLine,
               Effect.sleep(500),
@@ -28,7 +29,8 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
               newLine,
               SaveGame.saveGame().pipe(
                 Effect.matchEffect({
-                  onFailure: () => display`saving the game failed`,
+                  onFailure: (error) =>
+                    display(k.red(`saving the game failed (${error.message})`)),
                   onSuccess: () => display`game saved...`,
                 })
               ),

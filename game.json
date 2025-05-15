@@ -1,15 +1,20 @@
 {
   "player": {
     "name": "random-name",
-    "health": 3,
+    "health": 20,
     "eq": {
       "rightHand": "stick",
-      "leftHand": null,
-      "items": []
+      "leftHand": "dagger",
+      "items": [
+        {
+          "type": "weapon",
+          "name": "dagger"
+        }
+      ]
     },
-    "gold": 168,
-    "exp": 12,
-    "class": "mage"
+    "gold": 480,
+    "exp": 0,
+    "class": "assassin"
   },
-  "bankBalance": 2
+  "bankBalance": 0
 }

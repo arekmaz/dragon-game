@@ -1,4 +1,4 @@
-import { Data, Effect, pipe, Ref, Schema, String } from "effect";
+import { Data, Effect, Equal, pipe, Ref, Schema, String } from "effect";
 import { Display, k } from "./display.ts";
 import { WeaponSchema } from "./weaponsmith.ts";
 
@@ -13,7 +13,7 @@ class EqItemSchema extends Schema.Class<EqItemSchema>("EqItemSchema")({
 class EqSchema extends Schema.Class<EqSchema>("EqSchema")({
   rightHand: Schema.NullOr(WeaponSchema),
   leftHand: Schema.NullOr(WeaponSchema),
-  items: Schema.Data(Schema.Array(EqItemSchema)),
+  items: Schema.Array(EqItemSchema),
 }) {}
 
 export class PlayerData extends Schema.Class<PlayerData>("PlayerSchema")({
@@ -68,7 +68,7 @@ export class Player extends Effect.Service<Player>()("Player", {
         eq: EqSchema.make({
           rightHand: "stick",
           leftHand: null,
-          items: Data.array([]),
+          items: [],
         }),
         gold: 500,
         exp:
