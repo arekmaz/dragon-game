@@ -5,7 +5,7 @@ import { type Weapon } from "./weaponsmith.ts";
 type Eq = { weapon: Weapon };
 
 export const playerClasses = ["mage", "assassin", "warrior", "archer"] as const;
-type PlayerClass = (typeof playerClasses)[number];
+export type PlayerClass = (typeof playerClasses)[number];
 
 const makeDisplayClass = (c: PlayerClass) => pipe(c, String.capitalize, k.cyan);
 

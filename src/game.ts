@@ -1,6 +1,6 @@
 import { Terminal } from "@effect/platform";
 import { Effect, Ref, Schema } from "effect";
-import { Player, playerClasses } from "./game/player.ts";
+import { Player, type PlayerClass, playerClasses } from "./game/player.ts";
 import { TownSquare } from "./game/townSquare.ts";
 import { Forest } from "./game/forest.ts";
 import { Healer } from "./game/healer.ts";
@@ -10,47 +10,31 @@ import { Bank } from "./game/bank.ts";
 import { Weaponsmith } from "./game/weaponsmith.ts";
 import { Armorsmith } from "./game/armorsmith.ts";
 
-const game: Effect.Effect<
-  void,
-  never,
-  TownSquare | Terminal.Terminal | Player | Display
-> = Effect.gen(function* () {
-  const { display, newLine, clearScreen, displayYield, horizontalFullLine } =
-    yield* Display;
+const game: Effect.Effect<void, never, TownSquare | Player | Display> =
+  Effect.gen(function* () {
+    const { display, newLine, clearScreen, displayYield } = yield* Display;
 
-  const townSquareService = yield* TownSquare;
+    const townSquareService = yield* TownSquare;
 
-  yield* clearScreen;
-  yield* display`Game started`;
-  yield* newLine;
+    yield* clearScreen;
+    yield* display`Game started`;
+    yield* newLine;
 
-  yield* townSquareService.townSquareIntro;
-  yield* townSquareService.townSquare.pipe(
-    Effect.zipRight(
-      Effect.gen(function* () {
-        yield* newLine;
-        yield* display`Game finished`;
-        yield* newLine;
-        yield* horizontalFullLine();
-        yield* newLine;
-        yield* Effect.sleep(2000);
+    yield* townSquareService.townSquareIntro;
+    yield* townSquareService.townSquare.pipe(
+      Effect.catchTags({
+        PlayerDeadException: () =>
+          Effect.gen(function* () {
+            yield* Player.updateGold(() => 0);
+            const maxHealth = yield* Player.maxHealth;
+            yield* Player.updateHealth(() => maxHealth);
+            yield* displayYield`You died, you lost your gold, the game will restart`;
 
-        yield* game;
+            yield* game;
+          }),
       })
-    ),
-    Effect.catchTags({
-      PlayerDeadException: () =>
-        Effect.gen(function* () {
-          yield* Player.updateGold(() => 0);
-          const maxHealth = yield* Player.maxHealth;
-          yield* Player.updateHealth(() => maxHealth);
-          yield* displayYield`You died, you lost your gold, the game will restart`;
-
-          yield* game;
-        }),
-    })
-  );
-});
+    );
+  });
 
 const gameSetup = Effect.gen(function* () {
   const { display, newLine, choice, displayYield } = yield* Display;
@@ -87,31 +71,26 @@ const gameSetup = Effect.gen(function* () {
         yield* newLine;
 
         yield* display`
-    Hello, ${userName}!
+          Hello, ${userName}!
 
-    What is your class?
-      [M] mage
-      [A] assassin
-      [W] warrior
-      [R] archer`;
+          What is your class?
+            [M] mage
+            [A] assassin
+            [W] warrior
+            [R] archer
+        `;
+
+        const setPlayerClass = (c: PlayerClass) =>
+          Ref.update(ref.data, (data) => ({
+            ...data,
+            class: c,
+          }));
 
         yield* choice({
-          m: Ref.update(ref.data, (data) => ({
-            ...data,
-            class: "mage" as const,
-          })),
-          a: Ref.update(ref.data, (data) => ({
-            ...data,
-            class: "assassin" as const,
-          })),
-          w: Ref.update(ref.data, (data) => ({
-            ...data,
-            class: "warrior" as const,
-          })),
-          r: Ref.update(ref.data, (data) => ({
-            ...data,
-            class: "archer" as const,
-          })),
+          m: setPlayerClass("mage"),
+          a: setPlayerClass("assassin"),
+          w: setPlayerClass("warrior"),
+          r: setPlayerClass("archer"),
         });
       }),
       r: Effect.gen(function* () {
