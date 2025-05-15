@@ -1,4 +1,3 @@
-import { Terminal } from "@effect/platform/Terminal";
 import { Effect } from "effect";
 import { Display } from "./display.ts";
 import { Player } from "./player.ts";
@@ -8,25 +7,24 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
     const { display, newLine, choice } = yield* Display;
     const innIntro = display`Welcome to the Town's Inn, it's awfully crowded today`;
 
-    const inn: Effect.Effect<void, never, Terminal | Player> = Effect.gen(
-      function* () {
-        yield* newLine;
-        yield* display`
+    const inn: Effect.Effect<void, never, Player> = Effect.gen(function* () {
+      yield* newLine;
+      yield* display`
     What do you do next?
   [N] check town newsboard
   [S] show stats
   [R] return to the town square`;
 
-        yield* choice(
-          {
-            n: display`news board`.pipe(Effect.zipRight(inn)),
-            s: Player.use((s) => s.stats).pipe(Effect.zipRight(inn)),
-            r: Effect.void,
-          },
-          { defaultOption: "s" }
-        );
-      }
-    );
+      yield* choice(
+        {
+          n: display`news board`.pipe(Effect.zipRight(inn)),
+          s: Player.use((s) => s.stats).pipe(Effect.zipRight(inn)),
+          r: Effect.void,
+        },
+        { defaultOption: "s" }
+      );
+    });
+
     return {
       innIntro,
       inn,

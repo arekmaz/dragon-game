@@ -93,7 +93,7 @@ export class Display extends Effect.Service<Display>()("Display", {
     ): Effect.Effect<
       Effect.Effect.Success<Values<C>>,
       Effect.Effect.Error<Values<C>>,
-      Effect.Effect.Context<Values<C>> | Terminal.Terminal
+      Effect.Effect.Context<Values<C>>
     > =>
       Effect.gen(function* () {
         let input: string = "";

@@ -1,7 +1,7 @@
-import { Terminal } from "@effect/platform/Terminal";
 import { Effect, Random, Ref } from "effect";
 import { Display, k } from "./display.ts";
-import { Player, PlayerDeadException, weapons } from "./player.ts";
+import { Player, PlayerDeadException } from "./player.ts";
+import { weapons } from "./weaponsmith.ts";
 
 export class Forest extends Effect.Service<Forest>()("Forest", {
   effect: Effect.gen(function* () {
@@ -18,8 +18,8 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       newLine
     );
 
-    const forest: Effect.Effect<void, PlayerDeadException, Terminal | Player> =
-      Effect.gen(function* () {
+    const forest: Effect.Effect<void, PlayerDeadException, Player> = Effect.gen(
+      function* () {
         yield* display`
     What do you do next?
 
@@ -35,7 +35,8 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
           },
           { defaultOption: "s" }
         );
-      });
+      }
+    );
 
     const fight = Effect.gen(function* () {
       const lvl = yield* Player.level;
@@ -110,8 +111,8 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
       yield* newLine;
 
-      const move: Effect.Effect<void, PlayerDeadException, Terminal | Player> =
-        Effect.gen(function* () {
+      const move: Effect.Effect<void, PlayerDeadException, Player> = Effect.gen(
+        function* () {
           yield* display`
     What do you do next?
   [A] Attack
@@ -168,7 +169,8 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
             },
             { defaultOption: "s" }
           );
-        });
+        }
+      );
 
       if (yield* opIsAlive) {
         yield* move;

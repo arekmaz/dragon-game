@@ -7,20 +7,16 @@ import { Healer } from "./game/healer.ts";
 import { Inn } from "./game/inn.ts";
 import { Display } from "./game/display.ts";
 import { Bank } from "./game/bank.ts";
+import { Weaponsmith } from "./game/weaponsmith.ts";
+import { Armorsmith } from "./game/armorsmith.ts";
 
 const game: Effect.Effect<
   void,
-  void,
-  | TownSquare
-  | Terminal.Terminal
-  | Forest
-  | Player
-  | Healer
-  | Inn
-  | Display
-  | Bank
+  never,
+  TownSquare | Terminal.Terminal | Player | Display
 > = Effect.gen(function* () {
-  const { display, newLine, clearScreen, displayYield } = yield* Display;
+  const { display, newLine, clearScreen, displayYield, horizontalFullLine } =
+    yield* Display;
 
   const townSquareService = yield* TownSquare;
 
@@ -35,7 +31,7 @@ const game: Effect.Effect<
         yield* newLine;
         yield* display`Game finished`;
         yield* newLine;
-        yield* display`-------------`;
+        yield* horizontalFullLine();
         yield* newLine;
         yield* Effect.sleep(2000);
 
@@ -52,7 +48,6 @@ const game: Effect.Effect<
 
           yield* game;
         }),
-      QuitTownSquareException: () => Effect.void,
     })
   );
 });
@@ -146,5 +141,7 @@ export const runGame = Effect.all([
   Effect.provide(Healer.Default),
   Effect.provide(Inn.Default),
   Effect.provide(Bank.Default),
+  Effect.provide(Weaponsmith.Default),
+  Effect.provide(Armorsmith.Default),
   Effect.provide(Display.Default)
 ) as Effect.Effect<void, never, never>;

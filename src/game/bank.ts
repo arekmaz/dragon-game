@@ -2,6 +2,7 @@ import { Effect, Ref, Schema } from "effect";
 import { Display, k } from "./display.ts";
 import { Player } from "./player.ts";
 import { Terminal } from "@effect/platform/Terminal";
+import { NodeTerminal } from "@effect/platform-node";
 
 export class Bank extends Effect.Service<Bank>()("Bank", {
   effect: Effect.gen(function* () {
@@ -14,22 +15,21 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
     const depositGold = Effect.gen(function* () {
       const playerGold = yield* Player.gold;
 
-      const readAmount: Effect.Effect<number, never, Terminal> =
-        terminal.readLine.pipe(
-          Effect.flatMap(
-            Schema.decode(
-              Schema.NumberFromString.pipe(
-                Schema.int(),
-                Schema.between(0, playerGold)
-              )
+      const readAmount: Effect.Effect<number, never> = terminal.readLine.pipe(
+        Effect.flatMap(
+          Schema.decode(
+            Schema.NumberFromString.pipe(
+              Schema.int(),
+              Schema.between(0, playerGold)
             )
-          ),
-          Effect.tapError(
-            () =>
-              displayRaw`Incorrect amount, enter a number between 0-${playerGold}: `
-          ),
-          Effect.orElse(() => readAmount)
-        );
+          )
+        ),
+        Effect.tapError(
+          () =>
+            displayRaw`Incorrect amount, enter a number between 0-${playerGold}: `
+        ),
+        Effect.orElse(() => readAmount)
+      );
 
       yield* displayRaw`Enter the amount of gold you would like to deposit (max. ${playerGold}): `;
 
@@ -65,7 +65,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
     const withdrawSomeGold = Effect.gen(function* () {
       const bankBalance = yield* bankBalanceRef;
 
-      const readAmount: Effect.Effect<number, never, Terminal> =
+      const readAmount: Effect.Effect<number, never, never> =
         terminal.readLine.pipe(
           Effect.flatMap(
             Schema.decode(
@@ -91,9 +91,8 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
       yield* display`Withdrew ${k.yellow(amount)} gold`;
     });
 
-    const bank: Effect.Effect<void, void, Terminal | Player> = Effect.gen(
-      function* () {
-        yield* display`
+    const bank: Effect.Effect<void, never, Player> = Effect.gen(function* () {
+      yield* display`
   [B] Check your balance
   [A] Deposit all gold
   [D] Deposit some amount of gold
@@ -102,25 +101,24 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
   [S] Show stats
   [R] Return to the town square`;
 
-        yield* choice(
-          {
-            b: Effect.all([newLine, checkBalance, bank]),
-            a: Effect.all([newLine, depositAllGold, bank]),
-            d: Effect.all([newLine, depositGold, bank]),
-            w: Effect.all([newLine, withdrawAllGold, bank]),
-            c: Effect.all([newLine, withdrawSomeGold, bank]),
-            s: Effect.all([Player.use((s) => s.stats), bank]),
-            r: Effect.void,
-          },
-          { defaultOption: "s" }
-        );
-      }
-    );
+      yield* choice(
+        {
+          b: Effect.all([newLine, checkBalance, bank]),
+          a: Effect.all([newLine, depositAllGold, bank]),
+          d: Effect.all([newLine, depositGold, bank]),
+          w: Effect.all([newLine, withdrawAllGold, bank]),
+          c: Effect.all([newLine, withdrawSomeGold, bank]),
+          s: Effect.all([Player.use((s) => s.stats), bank]),
+          r: Effect.void,
+        },
+        { defaultOption: "s" }
+      );
+    });
 
     return {
       bankIntro,
       bank,
     };
   }),
-  dependencies: [Display.Default],
+  dependencies: [Display.Default, NodeTerminal.layer],
 }) {}
