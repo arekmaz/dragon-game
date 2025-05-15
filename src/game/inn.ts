@@ -5,7 +5,7 @@ import { SaveGame } from "../game.ts";
 
 export class Inn extends Effect.Service<Inn>()("Inn", {
   effect: Effect.gen(function* () {
-    const { display, newLine, choice } = yield* Display;
+    const { display, newLine, choice, sunrise, bed } = yield* Display;
     const intro = display`Welcome to the Town's Inn, it's awfully crowded today`;
 
     const inn: Effect.Effect<void, never, Player | SaveGame> = Effect.gen(
@@ -24,6 +24,8 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
               newLine,
               display`you're very tired, you go to sleep early`,
               newLine,
+              bed,
+              newLine,
               Effect.sleep(500),
               display`saving the game...`,
               newLine,
@@ -36,6 +38,8 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
               ),
               newLine,
               Effect.sleep(1000),
+              sunrise,
+              newLine,
               display`you wake up quickly, adventure awaits...`,
               Effect.sleep(1000),
               inn,

@@ -145,6 +145,31 @@ export class Display extends Effect.Service<Display>()("Display", {
         )
       );
 
+    const sunrise = displayRaw(
+      k.yellow(`
+      \\ | /       
+    '-.;;;.-'     
+   -==;;;;;==-
+    .-';;;'-.     
+      / | \\      
+`) +
+        k.green(`
+~ ~ ~ ~ ~ ~ ~ ~ ~
+  ~ ~ ~ ~ ~ ~ ~
+`)
+    );
+
+    const bed = displayRaw(
+      k.white(`
+      ()___ 
+    ()//__/)_________________()
+    ||(___)//#/_/#/_/#/_/#()/||
+    ||----|#| |#|_|#|_|#|_|| ||
+    ||____|_|#|_|#|_|#|_|#||/||
+    ||    |#|_|#|_|#|_|#|_||
+`)
+    );
+
     return {
       display,
       displayYield,
@@ -153,6 +178,8 @@ export class Display extends Effect.Service<Display>()("Display", {
       clearScreen,
       displayRaw,
       horizontalFullLine,
+      sunrise,
+      bed,
     };
   }),
 }) {}
