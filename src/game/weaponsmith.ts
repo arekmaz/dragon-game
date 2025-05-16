@@ -17,9 +17,7 @@ export const weapons = {
   greathalberd: 60,
 };
 
-export const WeaponSchema = Schema.Literal(
-  ...(Object.keys(weapons) as Array<Weapon>)
-);
+export const WeaponSchema = Schema.Literal(...Record.keys(weapons));
 
 export type Weapon = keyof typeof weapons;
 
@@ -72,36 +70,34 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
 
       yield* display`
         Weapon inventory:
-        ${Object.entries(weapons)
-          .map(([weapon, power]) => {
-            const weaponName = pipe(weapon, String.capitalize, k.white);
+        ${Record.collect(weapons, (weapon, power) => {
+          const weaponName = pipe(weapon, String.capitalize, k.white);
 
-            if (rightHandWeapon === weapon || leftHandWeapon === weapon) {
-              return `${weaponName} [equipped] - ${power} power, cost: ${
-                weaponCost[weapon as Weapon]
-              } gold`;
-            }
-
-            if (items.some((i) => i.type === "weapon" && i.name === weapon)) {
-              return `${weaponName} [owned] - ${power} power, cost: ${
-                weaponCost[weapon as Weapon]
-              } gold`;
-            }
-
-            if (playerLevel >= weaponMinLevel[weapon as Weapon]) {
-              return `${weaponName} - ${power} power, cost: ${
-                weaponCost[weapon as Weapon]
-              } gold, available`;
-            }
-
-            return `${weaponName} - ${power} power, cost: ${
+          if (rightHandWeapon === weapon || leftHandWeapon === weapon) {
+            return `${weaponName} [equipped] - ${power} power, cost: ${
               weaponCost[weapon as Weapon]
             } gold`;
-          })
-          .join("\n")}
+          }
+
+          if (items.some((i) => i.type === "weapon" && i.name === weapon)) {
+            return `${weaponName} [owned] - ${power} power, cost: ${
+              weaponCost[weapon as Weapon]
+            } gold`;
+          }
+
+          if (playerLevel >= weaponMinLevel[weapon as Weapon]) {
+            return `${weaponName} - ${power} power, cost: ${
+              weaponCost[weapon as Weapon]
+            } gold, available`;
+          }
+
+          return `${weaponName} - ${power} power, cost: ${
+            weaponCost[weapon as Weapon]
+          } gold`;
+        }).join("\n")}
       `;
 
-      const weaponsToBuy = Object.keys(weapons).filter(
+      const weaponsToBuy = Record.keys(weapons).filter(
         (weapon) =>
           playerLevel >= weaponMinLevel[weapon as Weapon] &&
           !items.some((i) => i.type === "weapon" && i.name === weapon) &&

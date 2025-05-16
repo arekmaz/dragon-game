@@ -1,5 +1,5 @@
 import { Terminal } from "@effect/platform";
-import { Effect, pipe, String } from "effect";
+import { Array, Effect, pipe, Record, String } from "effect";
 import { EOL } from "node:os";
 
 import k from "kleur";
@@ -98,11 +98,16 @@ export class Display extends Effect.Service<Display>()("Display", {
       Effect.gen(function* () {
         let input: string = "";
 
+        const displayChoices = pipe(
+          choices,
+          Record.keys,
+          Array.map(String.toUpperCase),
+          Array.join(",")
+        );
+
         const prompt = displayRaw`\n${
           opts.promptPrefix ?? "Enter an option"
-        } [${Object.keys(choices)
-          .map((c) => c.toUpperCase())
-          .join(",")}]: ${
+        } [${displayChoices}]: ${
           opts.defaultOption ? `(${opts.defaultOption.toUpperCase()})` : ""
         }`;
 

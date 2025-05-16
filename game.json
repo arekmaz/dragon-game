@@ -1,15 +1,15 @@
 {
   "player": {
     "name": "random-name",
-    "health": 20,
+    "health": 3,
     "eq": {
       "rightHand": "stick",
       "leftHand": null,
       "items": []
     },
-    "gold": 500,
-    "exp": 0,
+    "gold": 35,
+    "exp": 591,
     "class": "mage"
   },
-  "bankBalance": 0
+  "bankBalance": 500
 }

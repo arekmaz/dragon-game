@@ -83,6 +83,7 @@ const game: Effect.Effect<
           const maxHealth = yield* Player.getMaxHealth;
           yield* Player.updateHealth(() => maxHealth);
           yield* displayYield`You died, you lost your gold, the game will restart`;
+          yield* newLine;
 
           yield* game;
         }),
