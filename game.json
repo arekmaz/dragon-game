@@ -8,19 +8,11 @@
       "items": [
         {
           "type": "weapon",
-          "name": "greataxe"
-        },
-        {
-          "type": "weapon",
-          "name": "greatmace"
-        },
-        {
-          "type": "weapon",
           "name": "stick"
         }
       ]
     },
-    "gold": 0,
+    "gold": 300,
     "exp": 591,
     "class": "mage"
   },
