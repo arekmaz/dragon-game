@@ -72,34 +72,28 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
         Weapon inventory:
         ${Record.collect(weapons, (weapon, power) => {
           const weaponName = pipe(weapon, String.capitalize, k.white);
+          const cost = weaponCost[weapon];
+          const minLevel = weaponMinLevel[weapon];
 
           if (rightHandWeapon === weapon || leftHandWeapon === weapon) {
-            return `${weaponName} [equipped] - ${power} power, cost: ${
-              weaponCost[weapon as Weapon]
-            } gold`;
+            return `${weaponName} [equipped] - ${power} power, cost: ${cost} gold`;
           }
 
           if (items.some((i) => i.type === "weapon" && i.name === weapon)) {
-            return `${weaponName} [owned] - ${power} power, cost: ${
-              weaponCost[weapon as Weapon]
-            } gold`;
+            return `${weaponName} [owned] - ${power} power, cost: ${cost} gold`;
           }
 
-          if (playerLevel >= weaponMinLevel[weapon as Weapon]) {
-            return `${weaponName} - ${power} power, cost: ${
-              weaponCost[weapon as Weapon]
-            } gold, available`;
+          if (playerLevel >= minLevel) {
+            return `${weaponName} - ${power} power, cost: ${cost} gold, available`;
           }
 
-          return `${weaponName} - ${power} power, cost: ${
-            weaponCost[weapon as Weapon]
-          } gold`;
+          return `${weaponName} - ${power} power, cost: ${cost} gold, min level: ${minLevel}`;
         }).join("\n")}
       `;
 
       const weaponsToBuy = Record.keys(weapons).filter(
         (weapon) =>
-          playerLevel >= weaponMinLevel[weapon as Weapon] &&
+          playerLevel >= weaponMinLevel[weapon] &&
           !items.some((i) => i.type === "weapon" && i.name === weapon) &&
           rightHandWeapon !== weapon &&
           leftHandWeapon !== weapon
@@ -119,11 +113,9 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
       ${weaponsToBuy
         .map((weapon, i) => {
           const weaponName = pipe(weapon, String.capitalize, k.white);
-          const power = weapons[weapon as Weapon];
+          const power = weapons[weapon];
 
-          return `[${i}]: ${weaponName} - ${power} power, cost: ${
-            weaponCost[weapon as Weapon]
-          } gold`;
+          return `[${i}]: ${weaponName} - ${power} power, cost: ${weaponCost[weapon]} gold`;
         })
         .join("\n")}
       `,
@@ -135,7 +127,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                   i.toString(),
                   Effect.gen(function* () {
                     const playerGold = yield* Player.gold;
-                    const cost = weaponCost[weapon as Weapon];
+                    const cost = weaponCost[weapon];
 
                     if (playerGold < cost) {
                       yield* newLine;
@@ -146,10 +138,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                     yield* Player.updateGold((g) => g - cost);
                     yield* Player.updateEq((eq) => ({
                       ...eq,
-                      items: [
-                        ...eq.items,
-                        { type: "weapon", name: weapon as Weapon },
-                      ],
+                      items: [...eq.items, { type: "weapon", name: weapon }],
                     }));
 
                     yield* newLine;
@@ -170,15 +159,21 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                             eq.leftHand
                               ? {
                                   ...eq,
-                                  leftHand: weapon as Weapon,
+                                  leftHand: weapon,
                                   items: [
-                                    ...eq.items,
+                                    ...eq.items.filter(
+                                      (i) =>
+                                        !(
+                                          i.type === "weapon" &&
+                                          i.name === weapon
+                                        )
+                                    ),
                                     { type: "weapon", name: eq.leftHand },
                                   ],
                                 }
                               : {
                                   ...eq,
-                                  leftHand: weapon as Weapon,
+                                  leftHand: weapon,
                                 }
                           ),
                           display`Equipped on left hand`
@@ -188,21 +183,21 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                             eq.rightHand
                               ? {
                                   ...eq,
-                                  rightHand: weapon as Weapon,
+                                  rightHand: weapon,
                                   items: [
-                                    ...eq.items,
+                                    ...eq.items.filter(
+                                      (i) =>
+                                        !(
+                                          i.type === "weapon" &&
+                                          i.name === weapon
+                                        )
+                                    ),
                                     { type: "weapon", name: eq.rightHand },
                                   ],
                                 }
                               : {
                                   ...eq,
-                                  rightHand: weapon as Weapon,
-                                  items: eq.items.filter(
-                                    (i) =>
-                                      !(
-                                        i.type === "weapon" && i.name === weapon
-                                      )
-                                  ),
+                                  rightHand: weapon,
                                 }
                           ),
                           display`Equipped on right hand`

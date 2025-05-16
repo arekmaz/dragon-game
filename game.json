@@ -1,15 +1,28 @@
 {
   "player": {
     "name": "random-name",
-    "health": 3,
+    "health": 28,
     "eq": {
-      "rightHand": "stick",
-      "leftHand": null,
-      "items": []
+      "rightHand": "greatmace",
+      "leftHand": "greataxe",
+      "items": [
+        {
+          "type": "weapon",
+          "name": "greataxe"
+        },
+        {
+          "type": "weapon",
+          "name": "greatmace"
+        },
+        {
+          "type": "weapon",
+          "name": "stick"
+        }
+      ]
     },
-    "gold": 35,
+    "gold": 0,
     "exp": 591,
     "class": "mage"
   },
-  "bankBalance": 500
+  "bankBalance": 345
 }
