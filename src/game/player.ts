@@ -5,15 +5,15 @@ import { WeaponSchema } from "./weaponsmith.ts";
 export const playerClasses = ["mage", "assassin", "warrior", "archer"] as const;
 export type PlayerClass = (typeof playerClasses)[number];
 
-class EqItemSchema extends Schema.Class<EqItemSchema>("EqItemSchema")({
+export class EqItemSchema extends Schema.Class<EqItemSchema>("EqItemSchema")({
   type: Schema.Literal("weapon"),
   name: WeaponSchema,
 }) {}
 
-class EqSchema extends Schema.Class<EqSchema>("EqSchema")({
-  rightHand: Schema.NullOr(WeaponSchema),
-  leftHand: Schema.NullOr(WeaponSchema),
-  items: Schema.Array(EqItemSchema),
+export class EqSchema extends Schema.Class<EqSchema>("EqSchema")({
+  rightHand: Schema.Option(WeaponSchema),
+  leftHand: Schema.Option(WeaponSchema),
+  items: Schema.Data(Schema.Array(EqItemSchema)),
 }) {}
 
 export class PlayerData extends Schema.Class<PlayerData>("PlayerSchema")({

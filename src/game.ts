@@ -1,6 +1,7 @@
 import { Terminal } from "@effect/platform";
-import { Effect, Ref, Schema } from "effect";
+import { Effect, Ref, Schema, Option, Data } from "effect";
 import {
+  EqItemSchema,
   Player,
   type PlayerClass,
   playerClasses,
@@ -12,7 +13,7 @@ import { Healer } from "./game/healer.ts";
 import { Inn } from "./game/inn.ts";
 import { Display, k } from "./game/display.ts";
 import { Bank } from "./game/bank.ts";
-import { Weaponsmith } from "./game/weaponsmith.ts";
+import { WeaponSchema, Weaponsmith } from "./game/weaponsmith.ts";
 import { Armorsmith } from "./game/armorsmith.ts";
 import { FileSystem } from "@effect/platform";
 import { NodeFileSystem } from "@effect/platform-node";
@@ -23,7 +24,54 @@ class GameData extends Schema.Class<GameData>("GameData")({
   bankBalance: Schema.NonNegativeInt,
 }) {}
 
-const JsonGameData = Schema.parseJson(GameData, { space: 2 });
+class PersistedGameData extends Schema.Class<PersistedGameData>(
+  "PersistedGameData"
+)({
+  ...GameData.fields,
+  player: Schema.Struct({
+    ...PlayerData.fields,
+    eq: Schema.Struct({
+      leftHand: Schema.NullOr(WeaponSchema),
+      rightHand: Schema.NullOr(WeaponSchema),
+      items: Schema.Array(EqItemSchema),
+    }),
+  }),
+}) {}
+
+const JsonGameData = Schema.parseJson(
+  Schema.transform(PersistedGameData, GameData, {
+    decode: (encoded) => {
+      console.log({ encoded });
+      return {
+        ...encoded,
+        player: {
+          ...encoded.player,
+          eq: {
+            leftHand: Option.fromNullable(encoded.player.eq.leftHand),
+            rightHand: Option.fromNullable(encoded.player.eq.rightHand),
+            items: Data.array(encoded.player.eq.items),
+          },
+        },
+      };
+    },
+    encode: (_, decoded) => {
+      console.log({ decoded });
+      return {
+        ...decoded,
+        player: {
+          ...decoded.player,
+          eq: {
+            leftHand: Option.getOrNull(decoded.player.eq.leftHand),
+            rightHand: Option.getOrNull(decoded.player.eq.rightHand),
+            items: decoded.player.eq.items,
+          },
+        },
+      };
+    },
+    strict: true,
+  }),
+  { space: 2 }
+);
 
 export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
   effect: Effect.gen(function* () {
