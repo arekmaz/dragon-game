@@ -46,12 +46,9 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
         (o) => o.minLevel <= lvl
       );
 
-      const randomOpponent = Random.nextIntBetween(
-        0,
-        opponentsMatchingPlayerLevel.length
-      ).pipe(Effect.map((i) => opponentsMatchingPlayerLevel[i]));
-
-      const opponent = yield* randomOpponent;
+      const opponent = yield* Effect.orDie(
+        Random.choice(opponentsMatchingPlayerLevel)
+      );
 
       const opRef = yield* Ref.make(opponent.maxHealth);
 

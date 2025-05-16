@@ -1,32 +1,5 @@
-# Effect CLI Application Template
+# Dragon Game
 
-This template provides a solid foundation for building scalable and maintainable command-line applications with Effect. 
+## An RPG, single-player, terminal game written using functional style in typescript and [effect](https://effect.website)
 
-## Running Code
-
-This template leverages [tsx](https://tsx.is) to allow execution of TypeScript files via NodeJS as if they were written in plain JavaScript.
-
-To execute a file with `tsx`:
-
-```sh
-pnpm tsx ./path/to/the/file.ts
-```
-
-## Operations
-
-**Building**
-
-To build the package:
-
-```sh
-pnpm build
-```
-
-**Testing**
-
-To test the package:
-
-```sh
-pnpm test
-```
-
+This is a test of how far I can go to build stories using predefined blocks and composition.
