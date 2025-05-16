@@ -7,5 +7,5 @@ This is a test of how far I can go to build stories using predefined blocks and 
 How to play:
 
 - clone the repo
-- `pnpm i`
-- `pnpm start`
+- `npm i`
+- `npm start`
