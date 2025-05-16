@@ -16,6 +16,7 @@ import { Weaponsmith } from "./game/weaponsmith.ts";
 import { Armorsmith } from "./game/armorsmith.ts";
 import { FileSystem } from "@effect/platform";
 import { NodeFileSystem } from "@effect/platform-node";
+import { seqDiscard } from "./effectHelpers.ts";
 
 class GameData extends Schema.Class<GameData>("GameData")({
   player: PlayerData,
@@ -113,11 +114,11 @@ const gameSetup: Effect.Effect<
         yield* SaveGame.loadGame().pipe(
           Effect.tapError(Effect.logDebug),
           Effect.tapError((error) =>
-            Effect.all([
+            seqDiscard(
               newLine,
               display(k.red(`Game loading failed...`)),
-              newLine,
-            ])
+              newLine
+            )
           ),
           Effect.orElse(() => gameSetup),
           Effect.zipRight(player.stats),
@@ -181,11 +182,11 @@ const gameSetup: Effect.Effect<
   );
 });
 
-export const runGame = Effect.all([
+export const runGame = seqDiscard(
   Display.use((s) => s.clearScreen),
   gameSetup,
-  game,
-]).pipe(
+  game
+).pipe(
   Effect.asVoid,
   Effect.provide(TownSquare.Default),
   Effect.provide(Forest.Default),

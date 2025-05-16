@@ -8,6 +8,7 @@ import { Bank } from "./bank.ts";
 import { Weaponsmith } from "./weaponsmith.ts";
 import { Armorsmith } from "./armorsmith.ts";
 import { SaveGame } from "../game.ts";
+import { seqDiscard } from "../effectHelpers.ts";
 
 export class QuitTownSquareException extends Data.TaggedError(
   "QuitTownSquareException"
@@ -56,57 +57,57 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
 
       yield* choice(
         {
-          f: Effect.all([
+          f: seqDiscard(
             clearScreen,
             forest.intro,
             forest.forest,
             clearScreen,
             backToTownSquare,
-            townSquare,
-          ]),
-          w: Effect.all([
+            townSquare
+          ),
+          w: seqDiscard(
             clearScreen,
             weaponsmith.intro,
             weaponsmith.weaponsmith,
             clearScreen,
             backToTownSquare,
-            townSquare,
-          ]),
-          a: Effect.all([
+            townSquare
+          ),
+          a: seqDiscard(
             clearScreen,
             armorsmith.intro,
             display`not available yet`,
             displayYield(),
             clearScreen,
             backToTownSquare,
-            townSquare,
-          ]),
-          b: Effect.all([
+            townSquare
+          ),
+          b: seqDiscard(
             clearScreen,
             bank.intro,
             bank.bank,
             clearScreen,
             backToTownSquare,
-            townSquare,
-          ]),
-          h: Effect.all([
+            townSquare
+          ),
+          h: seqDiscard(
             clearScreen,
             healer.intro,
             healer.healer,
             clearScreen,
             backToTownSquare,
-            townSquare,
-          ]),
-          i: Effect.all([
+            townSquare
+          ),
+          i: seqDiscard(
             clearScreen,
             inn.intro,
             inn.inn,
             clearScreen,
             backToTownSquare,
-            townSquare,
-          ]),
-          s: Effect.all([Player.stats, townSquare]),
-          q: Effect.all([display`quitting...`, Effect.sleep(1000)]),
+            townSquare
+          ),
+          s: seqDiscard(Player.stats, townSquare),
+          q: seqDiscard(display`quitting...`, Effect.sleep(1000)),
         },
         { defaultOption: "s" }
       );

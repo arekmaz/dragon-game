@@ -1,4 +1,4 @@
-import { Data, Effect, Equal, pipe, Ref, Schema, String } from "effect";
+import { Data, Effect, pipe, Ref, Schema, String } from "effect";
 import { Display, k } from "./display.ts";
 import { WeaponSchema } from "./weaponsmith.ts";
 

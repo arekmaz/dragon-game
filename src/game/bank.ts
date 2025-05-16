@@ -3,6 +3,7 @@ import { Display, k } from "./display.ts";
 import { Player } from "./player.ts";
 import { Terminal } from "@effect/platform/Terminal";
 import { NodeTerminal } from "@effect/platform-node";
+import { seqDiscard } from "../effectHelpers.ts";
 
 export class Bank extends Effect.Service<Bank>()("Bank", {
   effect: Effect.gen(function* () {
@@ -103,12 +104,12 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
 
       yield* choice(
         {
-          b: Effect.all([newLine, checkBalance, bank]),
-          a: Effect.all([newLine, depositAllGold, bank]),
-          d: Effect.all([newLine, depositGold, bank]),
-          w: Effect.all([newLine, withdrawAllGold, bank]),
-          c: Effect.all([newLine, withdrawSomeGold, bank]),
-          s: Effect.all([Player.stats, bank]),
+          b: seqDiscard(newLine, checkBalance, bank),
+          a: seqDiscard(newLine, depositAllGold, bank),
+          d: seqDiscard(newLine, depositGold, bank),
+          w: seqDiscard(newLine, withdrawAllGold, bank),
+          c: seqDiscard(newLine, withdrawSomeGold, bank),
+          s: seqDiscard(Player.stats, bank),
           r: Effect.void,
         },
         { defaultOption: "s" }

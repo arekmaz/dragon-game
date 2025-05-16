@@ -2,6 +2,7 @@ import { Effect, Random, Ref } from "effect";
 import { Display, k } from "./display.ts";
 import { Player, PlayerDeadException } from "./player.ts";
 import { weapons } from "./weaponsmith.ts";
+import { seqDiscard } from "../effectHelpers.ts";
 
 export class Forest extends Effect.Service<Forest>()("Forest", {
   effect: Effect.gen(function* () {
@@ -29,8 +30,8 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
         yield* choice(
           {
-            l: Effect.all([fight, clearScreen, forestBackMsg, forest]),
-            s: Effect.all([Player.stats, forest]),
+            l: seqDiscard(fight, clearScreen, forestBackMsg, forest),
+            s: seqDiscard(Player.stats, forest),
             r: Effect.void,
           },
           { defaultOption: "s" }
@@ -187,7 +188,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
             {
               a: attack,
 
-              s: Effect.all([fightStats, move]),
+              s: seqDiscard(fightStats, move),
 
               r: Random.nextIntBetween(3, 6).pipe(
                 Effect.tap((lost) =>

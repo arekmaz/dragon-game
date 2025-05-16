@@ -1,6 +1,7 @@
 import { Effect, pipe, String, Record, Schema } from "effect";
 import { Display, k } from "./display.ts";
 import { Player } from "./player.ts";
+import { seqDiscard } from "../effectHelpers.ts";
 
 export const weapons = {
   stick: 2,
@@ -52,14 +53,14 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
   effect: Effect.gen(function* () {
     const { display, newLine, choice } = yield* Display;
 
-    const intro = Effect.all([
+    const intro = seqDiscard(
       display`Welcome to the Weaponsmith, you can buy new weapons here.`,
       newLine,
       Effect.gen(function* () {
         const playerLevel = yield* Player.level;
         yield* display`Current player level: ${playerLevel}, current player weapons: ${(yield* Player.rightHand) ?? "-"}/${(yield* Player.leftHand) ?? "-"}`;
-      }),
-    ]);
+      })
+    );
 
     const buyWeapon = Effect.gen(function* () {
       const playerLevel = yield* Player.level;
@@ -115,7 +116,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
         return;
       }
 
-      const chooseWeapon = Effect.all([
+      const chooseWeapon = seqDiscard(
         newLine,
         display`Weapons available to buy (Q to cancel):
 
@@ -168,7 +169,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
 
                     yield* choice(
                       {
-                        l: Effect.all([
+                        l: seqDiscard(
                           Player.updateEq((eq) =>
                             eq.leftHand
                               ? {
@@ -184,9 +185,9 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                                   leftHand: weapon as Weapon,
                                 }
                           ),
-                          display`Equipped on left hand`,
-                        ]),
-                        r: Effect.all([
+                          display`Equipped on left hand`
+                        ),
+                        r: seqDiscard(
                           Player.updateEq((eq) =>
                             eq.rightHand
                               ? {
@@ -208,8 +209,8 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                                   ),
                                 }
                           ),
-                          display`Equipped on right hand`,
-                        ]),
+                          display`Equipped on right hand`
+                        ),
                         q: Effect.void,
                       },
                       { defaultOption: "q" }
@@ -220,8 +221,8 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
             ["q", Effect.void],
           ]),
           { defaultOption: "q" }
-        ),
-      ]);
+        )
+      );
 
       yield* chooseWeapon;
 
@@ -238,8 +239,8 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
 
         yield* choice(
           {
-            w: Effect.all([buyWeapon, weaponsmith]),
-            s: Effect.all([Player.stats, weaponsmith]),
+            w: seqDiscard(buyWeapon, weaponsmith),
+            s: seqDiscard(Player.stats, weaponsmith),
             r: Effect.void,
           },
           { defaultOption: "s" }

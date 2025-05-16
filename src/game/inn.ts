@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { Display, k } from "./display.ts";
 import { Player } from "./player.ts";
 import { SaveGame } from "../game.ts";
+import { seqDiscard } from "../effectHelpers.ts";
 
 export class Inn extends Effect.Service<Inn>()("Inn", {
   effect: Effect.gen(function* () {
@@ -20,7 +21,7 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
 
         yield* choice(
           {
-            l: Effect.all([
+            l: seqDiscard(
               newLine,
               display`you're very tired, you go to sleep early`,
               newLine,
@@ -30,9 +31,9 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
               display`saving the game...`,
               newLine,
               SaveGame.saveGame().pipe(
+                Effect.tapError(Effect.logDebug),
                 Effect.matchEffect({
-                  onFailure: (error) =>
-                    display(k.red(`saving the game failed (${error.message})`)),
+                  onFailure: () => display(k.red(`saving the game failed`)),
                   onSuccess: () => display`game saved...`,
                 })
               ),
@@ -42,8 +43,8 @@ export class Inn extends Effect.Service<Inn>()("Inn", {
               newLine,
               display`you wake up quickly, adventure awaits...`,
               Effect.sleep(1000),
-              inn,
-            ]),
+              inn
+            ),
             n: display`news board`.pipe(Effect.zipRight(inn)),
             s: Player.stats.pipe(Effect.zipRight(inn)),
             r: Effect.void,
