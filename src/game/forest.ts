@@ -1,4 +1,4 @@
-import { Effect, Random, Ref } from "effect";
+import { Effect, Random, Ref, Option } from "effect";
 import { Display, k } from "./display.ts";
 import { Player, PlayerDeadException } from "./player.ts";
 import { weapons } from "./weaponsmith.ts";
@@ -62,8 +62,10 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       const playerStrike = Random.nextIntBetween(
         1,
         lvl * 3 +
-          (rightHandWeapon ? weapons[rightHandWeapon] : 0) +
-          (leftHandWeapon ? weapons[leftHandWeapon] : 0)
+          (Option.isSome(rightHandWeapon)
+            ? weapons[rightHandWeapon.value]
+            : 0) +
+          (Option.isSome(leftHandWeapon) ? weapons[leftHandWeapon.value] : 0)
       ).pipe(Effect.tap((dmg) => Ref.update(opRef, (h) => Math.max(h - dmg))));
 
       const opStrike = Random.nextIntBetween(1, opponent.power).pipe(

@@ -1,5 +1,5 @@
 import { Terminal } from "@effect/platform";
-import { Effect, Ref, Schema, Option, Data, ParseResult } from "effect";
+import { Effect, Ref, Schema, ParseResult } from "effect";
 import {
   EqItemSchema,
   Player,

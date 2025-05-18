@@ -1,4 +1,4 @@
-import { Effect, pipe, String, Record, Schema } from "effect";
+import { Effect, pipe, String, Record, Schema, Option } from "effect";
 import { Display, k } from "./display.ts";
 import { Player } from "./player.ts";
 import { seqDiscard } from "../effectHelpers.ts";
@@ -75,7 +75,10 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
           const cost = weaponCost[weapon];
           const minLevel = weaponMinLevel[weapon];
 
-          if (rightHandWeapon === weapon || leftHandWeapon === weapon) {
+          if (
+            Option.getOrNull(rightHandWeapon) === weapon ||
+            Option.getOrNull(leftHandWeapon) === weapon
+          ) {
             return `${weaponName} [equipped] - ${power} power, cost: ${cost} gold`;
           }
 
@@ -95,8 +98,8 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
         (weapon) =>
           playerLevel >= weaponMinLevel[weapon] &&
           !items.some((i) => i.type === "weapon" && i.name === weapon) &&
-          rightHandWeapon !== weapon &&
-          leftHandWeapon !== weapon
+          Option.getOrNull(rightHandWeapon) !== weapon &&
+          Option.getOrNull(leftHandWeapon) !== weapon
       );
 
       if (weaponsToBuy.length === 0) {
@@ -156,10 +159,10 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                       {
                         l: seqDiscard(
                           Player.updateEq((eq) =>
-                            eq.leftHand
+                            Option.isSome(eq.leftHand)
                               ? {
                                   ...eq,
-                                  leftHand: weapon,
+                                  leftHand: Option.some(weapon),
                                   items: [
                                     ...eq.items.filter(
                                       (i) =>
@@ -168,22 +171,22 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                                           i.name === weapon
                                         )
                                     ),
-                                    { type: "weapon", name: eq.leftHand },
+                                    { type: "weapon", name: eq.leftHand.value },
                                   ],
                                 }
                               : {
                                   ...eq,
-                                  leftHand: weapon,
+                                  leftHand: Option.some(weapon),
                                 }
                           ),
                           display`Equipped on left hand`
                         ),
                         r: seqDiscard(
                           Player.updateEq((eq) =>
-                            eq.rightHand
+                            Option.isSome(eq.rightHand)
                               ? {
                                   ...eq,
-                                  rightHand: weapon,
+                                  rightHand: Option.some(weapon),
                                   items: [
                                     ...eq.items.filter(
                                       (i) =>
@@ -192,12 +195,15 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                                           i.name === weapon
                                         )
                                     ),
-                                    { type: "weapon", name: eq.rightHand },
+                                    {
+                                      type: "weapon",
+                                      name: eq.rightHand.value,
+                                    },
                                   ],
                                 }
                               : {
                                   ...eq,
-                                  rightHand: weapon,
+                                  rightHand: Option.some(weapon),
                                 }
                           ),
                           display`Equipped on right hand`
