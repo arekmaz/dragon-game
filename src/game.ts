@@ -1,5 +1,5 @@
 import { Terminal } from "@effect/platform";
-import { Effect, Ref, Schema, Option, Data } from "effect";
+import { Effect, Ref, Schema, Option, Data, ParseResult } from "effect";
 import {
   EqItemSchema,
   Player,
@@ -31,8 +31,8 @@ class PersistedGameData extends Schema.Class<PersistedGameData>(
   player: Schema.Struct({
     ...PlayerData.fields,
     eq: Schema.Struct({
-      leftHand: Schema.NullOr(WeaponSchema),
-      rightHand: Schema.NullOr(WeaponSchema),
+      leftHand: Schema.OptionFromNullOr(WeaponSchema),
+      rightHand: Schema.OptionFromNullOr(WeaponSchema),
       items: Schema.Array(EqItemSchema),
     }),
   }),
@@ -41,29 +41,27 @@ class PersistedGameData extends Schema.Class<PersistedGameData>(
 const JsonGameData = Schema.parseJson(
   Schema.transform(PersistedGameData, GameData, {
     decode: (encoded) => {
-      console.log({ encoded });
       return {
         ...encoded,
         player: {
           ...encoded.player,
           eq: {
-            leftHand: Option.fromNullable(encoded.player.eq.leftHand),
-            rightHand: Option.fromNullable(encoded.player.eq.rightHand),
-            items: Data.array(encoded.player.eq.items),
+            leftHand: encoded.player.eq.leftHand,
+            rightHand: encoded.player.eq.rightHand,
+            items: Data.unsafeArray(encoded.player.eq.items),
           },
         },
       };
     },
-    encode: (_, decoded) => {
-      console.log({ decoded });
+    encode: (decoded) => {
       return {
         ...decoded,
         player: {
           ...decoded.player,
           eq: {
-            leftHand: Option.getOrNull(decoded.player.eq.leftHand),
-            rightHand: Option.getOrNull(decoded.player.eq.rightHand),
-            items: decoded.player.eq.items,
+            leftHand: decoded.player.eq.leftHand,
+            rightHand: decoded.player.eq.rightHand,
+            items: Data.unsafeArray(decoded.player.eq.items),
           },
         },
       };
@@ -94,10 +92,14 @@ export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
     const loadGame = (fileName: string = defaultSaveFile) =>
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
+        const decode = Schema.decode(JsonGameData);
 
-        const gameData = yield* fs
-          .readFileString(fileName)
-          .pipe(Effect.flatMap(Schema.decode(JsonGameData)));
+        const gameData = yield* fs.readFileString(fileName).pipe(
+          Effect.flatMap((d) => decode(d)),
+          Effect.tapErrorTag("ParseError", (e) =>
+            Effect.logError(ParseResult.TreeFormatter.formatErrorSync(e))
+          )
+        );
 
         yield* Ref.update(player.data, () => gameData.player);
         yield* Ref.update(bank.bankBalanceRef, () => gameData.bankBalance);
