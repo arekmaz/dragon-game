@@ -1,5 +1,13 @@
 import { Terminal } from "@effect/platform";
-import { Effect, Ref, Schema, ParseResult } from "effect";
+import {
+  Effect,
+  Ref,
+  Schema,
+  ParseResult,
+  Logger,
+  LogLevel,
+  Data,
+} from "effect";
 import {
   EqItemSchema,
   Player,
@@ -41,7 +49,16 @@ class PersistedGameData extends Schema.Class<PersistedGameData>(
 const JsonGameData = Schema.parseJson(
   Schema.transform(PersistedGameData, GameData, {
     decode: (encoded) => encoded,
-    encode: (decoded) => decoded,
+    encode: (decoded) => ({
+      ...decoded,
+      player: {
+        ...decoded.player,
+        eq: {
+          ...decoded.player.eq,
+          items: Data.array(decoded.player.eq.items),
+        },
+      },
+    }),
     strict: true,
   }),
   { space: 2 }
@@ -58,8 +75,8 @@ export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
     const saveGame = (fileName: string = defaultSaveFile) =>
       Effect.gen(function* () {
         const saveData = yield* Schema.encode(JsonGameData)({
-          player: yield* player.data.get,
-          bankBalance: yield* bank.bankBalanceRef.get,
+          player: yield* player.data,
+          bankBalance: yield* bank.bankBalanceRef,
         });
 
         yield* fs.writeFileString(fileName, saveData);
@@ -224,5 +241,6 @@ export const runGame = seqDiscard(
   Effect.provide(SaveGame.Default),
   Effect.provide(Bank.Default),
   Effect.provide(Player.Default),
-  Effect.provide(Display.Default)
+  Effect.provide(Display.Default),
+  Logger.withMinimumLogLevel(LogLevel.Debug)
 );

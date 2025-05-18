@@ -3,8 +3,8 @@
     "name": "random-name",
     "health": 28,
     "eq": {
-      "rightHand": "greatmace",
       "leftHand": null,
+      "rightHand": "greatmace",
       "items": [
         {
           "type": "weapon",

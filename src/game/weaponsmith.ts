@@ -56,7 +56,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
       newLine,
       Effect.gen(function* () {
         const playerLevel = yield* Player.level;
-        yield* display`Current player level: ${playerLevel}, current player weapons: ${(yield* Player.rightHand) ?? "-"}/${(yield* Player.leftHand) ?? "-"}`;
+        yield* display`Current player level: ${playerLevel}, current player weapons: ${Option.getOrElse(yield* Player.rightHand, () => "-")}/${Option.getOrElse(yield* Player.leftHand, () => "-")}`;
       })
     );
 
