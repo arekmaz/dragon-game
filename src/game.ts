@@ -33,39 +33,15 @@ class PersistedGameData extends Schema.Class<PersistedGameData>(
     eq: Schema.Struct({
       leftHand: Schema.OptionFromNullOr(WeaponSchema),
       rightHand: Schema.OptionFromNullOr(WeaponSchema),
-      items: Schema.Array(EqItemSchema),
+      items: Schema.Data(Schema.Array(EqItemSchema)),
     }),
   }),
 }) {}
 
 const JsonGameData = Schema.parseJson(
   Schema.transform(PersistedGameData, GameData, {
-    decode: (encoded) => {
-      return {
-        ...encoded,
-        player: {
-          ...encoded.player,
-          eq: {
-            leftHand: encoded.player.eq.leftHand,
-            rightHand: encoded.player.eq.rightHand,
-            items: Data.unsafeArray(encoded.player.eq.items),
-          },
-        },
-      };
-    },
-    encode: (decoded) => {
-      return {
-        ...decoded,
-        player: {
-          ...decoded.player,
-          eq: {
-            leftHand: decoded.player.eq.leftHand,
-            rightHand: decoded.player.eq.rightHand,
-            items: Data.unsafeArray(decoded.player.eq.items),
-          },
-        },
-      };
-    },
+    decode: (encoded) => encoded,
+    encode: (decoded) => decoded,
     strict: true,
   }),
   { space: 2 }
