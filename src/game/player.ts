@@ -96,8 +96,8 @@ export class Player extends Effect.Service<Player>()("Player", {
         Health: ${health}/${maxHealth(level)}
         Level: ${level}
         Exp: ${currentLevelExp}/${getExpRequiredForLvl(level)}
-        Right hand: ${eq.rightHand ?? "-"}
-        Left hand: ${eq.leftHand ?? "-"}
+        Right hand: ${Option.getOrElse(eq.rightHand, () => "-")}
+        Left hand: ${Option.getOrElse(eq.leftHand, () => "-")}
         Gold: ${gold}${
         eq.items.length > 0
           ? `
