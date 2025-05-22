@@ -1,6 +1,6 @@
-import { Effect, pipe, String, Record, Schema, Option } from "effect";
+import { Effect, pipe, String, Record, Schema, Option, Data } from "effect";
 import { Display, k } from "./display.ts";
-import { Player } from "./player.ts";
+import { EqItemSchema, Player } from "./player.ts";
 import { seqDiscard } from "../effectHelpers.ts";
 
 export const weapons = {
@@ -141,7 +141,10 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                     yield* Player.updateGold((g) => g - cost);
                     yield* Player.updateEq((eq) => ({
                       ...eq,
-                      items: [...eq.items, { type: "weapon", name: weapon }],
+                      items: Data.array([
+                        ...eq.items,
+                        EqItemSchema.make({ type: "weapon", name: weapon }),
+                      ]),
                     }));
 
                     yield* newLine;
@@ -163,7 +166,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                               ? {
                                   ...eq,
                                   leftHand: Option.some(weapon),
-                                  items: [
+                                  items: Data.array([
                                     ...eq.items.filter(
                                       (i) =>
                                         !(
@@ -171,8 +174,11 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                                           i.name === weapon
                                         )
                                     ),
-                                    { type: "weapon", name: eq.leftHand.value },
-                                  ],
+                                    EqItemSchema.make({
+                                      type: "weapon",
+                                      name: eq.leftHand.value,
+                                    }),
+                                  ]),
                                 }
                               : {
                                   ...eq,
@@ -187,7 +193,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                               ? {
                                   ...eq,
                                   rightHand: Option.some(weapon),
-                                  items: [
+                                  items: Data.array([
                                     ...eq.items.filter(
                                       (i) =>
                                         !(
@@ -195,11 +201,11 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                                           i.name === weapon
                                         )
                                     ),
-                                    {
+                                    EqItemSchema.make({
                                       type: "weapon",
                                       name: eq.rightHand.value,
-                                    },
-                                  ],
+                                    }),
+                                  ]),
                                 }
                               : {
                                   ...eq,

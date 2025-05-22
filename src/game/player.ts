@@ -72,7 +72,7 @@ export class Player extends Effect.Service<Player>()("Player", {
           items: Data.array([]),
         }),
         gold: 500,
-        exp: startingExp - getExpRequiredForLvl(startingLvl - 1),
+        exp: startingExp,
       })
     );
 

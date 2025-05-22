@@ -3,12 +3,16 @@
     "name": "random-name",
     "health": 26,
     "eq": {
-      "leftHand": null,
+      "leftHand": "greathalberd",
       "rightHand": "greatmace",
       "items": [
         {
           "type": "weapon",
           "name": "stick"
+        },
+        {
+          "type": "weapon",
+          "name": "greathalberd"
         }
       ]
     },
@@ -16,5 +20,5 @@
     "exp": 980,
     "class": "mage"
   },
-  "bankBalance": 345
+  "bankBalance": 225
 }
