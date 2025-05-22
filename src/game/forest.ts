@@ -9,14 +9,44 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
     const { display, newLine, choice, clearScreen, displayYield } =
       yield* Display;
 
-    const intro = Effect.zipRight(
-      display`You arrive at the deep dark forest`,
-      newLine
+    const wolfMission = seqDiscard(
+      displayYield(k.red("There's a wolf in your path, it looks very hungry")),
+      newLine,
+      display(k.yellow("What do you do?")),
+      newLine,
+      display`
+      [A] Attack
+      [R] Run
+      `,
+      choice({
+        a: seqDiscard(),
+        r: seqDiscard(display("run")),
+      })
     );
 
-    const forestBackMsg = Effect.zipRight(
+    const missions = [wolfMission];
+
+    const randomMission = Random.nextBoolean.pipe(
+      Effect.flatMap((showMission) =>
+        showMission
+          ? Random.choice(missions).pipe(
+              Effect.orDie,
+              Effect.flatMap((effect) => effect)
+            )
+          : Effect.void
+      )
+    );
+
+    const intro = seqDiscard(
+      display`You arrive at the deep dark forest`,
+      newLine,
+      randomMission
+    );
+
+    const forestBackMsg = seqDiscard(
       display`You are back at the forest`,
-      newLine
+      newLine,
+      randomMission
     );
 
     const forest: Effect.Effect<void, PlayerDeadException, Player> = Effect.gen(
