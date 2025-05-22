@@ -29,25 +29,26 @@ const makeDisplayClass = (c: PlayerClass) => pipe(c, String.capitalize, k.cyan);
 
 const maxHealth = (level: number) => 20 + (level - 1) * 2;
 
-const requiredLvlExp = [50, 100, 170, 250, 400];
+const getExpRequiredForLvl = (lvl: number) => {
+  const baseExp = 50;
 
-const getExpRequiredForLvl = (lvl: number) => requiredLvlExp[lvl - 1];
+  const growthFactor = 1.15;
+
+  return Math.floor(baseExp * Math.pow(growthFactor, lvl - 1));
+};
 
 const lvlByExp = (exp: number) => {
-  let result = 0;
-  let expLeft = exp;
+  let level = 1;
+  let totalExp = 0;
 
-  for (const required of requiredLvlExp) {
-    result++;
-
-    if (expLeft < required) {
-      return result;
+  while (true) {
+    const requiredExp = getExpRequiredForLvl(level);
+    if (exp < totalExp + requiredExp) {
+      return level;
     }
-
-    expLeft -= required;
+    totalExp += requiredExp;
+    level++;
   }
-
-  return result;
 };
 
 const startingExp = 0;
@@ -71,9 +72,7 @@ export class Player extends Effect.Service<Player>()("Player", {
           items: Data.array([]),
         }),
         gold: 500,
-        exp:
-          startingExp -
-          requiredLvlExp.slice(0, startingLvl - 1).reduce((a, b) => a + b, 0),
+        exp: startingExp - getExpRequiredForLvl(startingLvl - 1),
       })
     );
 
@@ -87,8 +86,7 @@ export class Player extends Effect.Service<Player>()("Player", {
 
       const level = lvlByExp(exp);
 
-      const currentLevelExp =
-        exp - requiredLvlExp.slice(0, level - 1).reduce((a, b) => a + b, 0);
+      const currentLevelExp = exp - getExpRequiredForLvl(level - 1);
 
       yield* display`
         Name: ${makeDisplayName(name)}

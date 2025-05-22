@@ -85,10 +85,9 @@ export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
     const loadGame = (fileName: string = defaultSaveFile) =>
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
-        const decode = Schema.decode(JsonGameData);
 
         const gameData = yield* fs.readFileString(fileName).pipe(
-          Effect.flatMap((d) => decode(d)),
+          Effect.flatMap(Schema.decode(JsonGameData)),
           Effect.tapErrorTag("ParseError", (e) =>
             Effect.logError(ParseResult.TreeFormatter.formatErrorSync(e))
           )

@@ -1,7 +1,7 @@
 {
   "player": {
     "name": "random-name",
-    "health": 28,
+    "health": 26,
     "eq": {
       "leftHand": null,
       "rightHand": "greatmace",
@@ -12,8 +12,8 @@
         }
       ]
     },
-    "gold": 300,
-    "exp": 591,
+    "gold": 2,
+    "exp": 980,
     "class": "mage"
   },
   "bankBalance": 345
