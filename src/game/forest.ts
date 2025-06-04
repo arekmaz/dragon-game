@@ -3,11 +3,14 @@ import { Display, k } from "./display.ts";
 import { Player, PlayerDeadException } from "./player.ts";
 import { weapons } from "./weaponsmith.ts";
 import { seqDiscard } from "../effectHelpers.ts";
+import { Mission } from "./mission.ts";
 
 export class Forest extends Effect.Service<Forest>()("Forest", {
   effect: Effect.gen(function* () {
     const { display, newLine, choice, clearScreen, displayYield } =
       yield* Display;
+
+    const mission = yield* Mission;
 
     const fight = <R, R1>({
       makeOpponent,
@@ -207,16 +210,17 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
     const missions = [wolfMission];
 
-    const randomMission = Random.nextBoolean.pipe(
-      Effect.flatMap((showMission) =>
-        showMission
-          ? Random.choice(missions).pipe(
-              Effect.orDie,
-              Effect.flatMap((effect) => effect)
-            )
-          : Effect.void
-      )
-    );
+    const randomMission = mission.mission;
+    // Random.nextBoolean.pipe(
+    //   Effect.flatMap((showMission) =>
+    //     showMission
+    //       ? Random.choice(missions).pipe(
+    //           Effect.orDie,
+    //           Effect.flatMap((effect) => effect)
+    //         )
+    //       : Effect.void
+    //   )
+    // );
 
     const intro = seqDiscard(
       display`You arrive at the deep dark forest`,

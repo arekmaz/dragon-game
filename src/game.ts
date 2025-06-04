@@ -26,6 +26,8 @@ import { Armorsmith } from "./game/armorsmith.ts";
 import { FileSystem } from "@effect/platform";
 import { NodeFileSystem } from "@effect/platform-node";
 import { seqDiscard } from "./effectHelpers.ts";
+import { DeterministicRandom } from "./DeterministicRandom.ts";
+import { Mission } from "./game/mission.ts";
 
 class GameData extends Schema.Class<GameData>("GameData")({
   player: PlayerData,
@@ -233,6 +235,8 @@ export const runGame = seqDiscard(
   Effect.asVoid,
   Effect.provide(TownSquare.Default),
   Effect.provide(Forest.Default),
+  Effect.provide(Mission.Default),
+  Effect.provide(DeterministicRandom.Default),
   Effect.provide(Healer.Default),
   Effect.provide(Inn.Default),
   Effect.provide(Weaponsmith.Default),
