@@ -49,7 +49,9 @@ export class DeterministicRandom extends Effect.Service<DeterministicRandom>()(
       const iterator = createRandomIterator("my-seed");
 
       return {
-        nextInt: Effect.sync(iterator.next),
+        nextInt: Effect.sync(() =>
+          Math.floor(iterator.next().value * Number.MAX_SAFE_INTEGER)
+        ),
       };
     }),
   }
