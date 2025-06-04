@@ -52,6 +52,15 @@ export class DeterministicRandom extends Effect.Service<DeterministicRandom>()(
         nextInt: Effect.sync(() =>
           Math.floor(iterator.next().value * Number.MAX_SAFE_INTEGER)
         ),
+        nextBoolean: Effect.sync(() => iterator.next().value < 0.5),
+        nextIntBetween: (min: number, max: number) =>
+          Effect.sync(
+            () => Math.floor(iterator.next().value * (max - min + 1)) + min
+          ),
+        choice: <A>(elements: A[]) =>
+          Effect.sync(
+            () => elements[Math.floor(iterator.next().value * elements.length)]
+          ),
       };
     }),
   }
