@@ -5,6 +5,19 @@ import { DeterministicRandom } from "../DeterministicRandom.ts";
 import { seqDiscard } from "../effectHelpers.ts";
 import { fight } from "./fight.ts";
 
+function defineRelatedKeys<T extends Record<string, any>>(
+  obj: T & {
+    [K in keyof T]: { deps: Exclude<keyof T, K>[] };
+  }
+): T {
+  return obj;
+}
+
+defineRelatedKeys({
+  a: { deps: ["b"] },
+  b: { deps: ["a"] },
+});
+
 export class Mission extends Effect.Service<Mission>()("Mission", {
   effect: Effect.gen(function* () {
     const { display, newLine, choice, clearScreen, displayYield } =
