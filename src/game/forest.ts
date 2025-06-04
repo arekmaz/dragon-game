@@ -9,6 +9,177 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
     const { display, newLine, choice, clearScreen, displayYield } =
       yield* Display;
 
+    const fight = <R, R1>({
+      makeOpponent,
+      playerStarts,
+    }: {
+      makeOpponent: Effect.Effect<Opponent, never, R>;
+      playerStarts: Effect.Effect<boolean, never, R1>;
+    }) =>
+      Effect.gen(function* () {
+        const opponent = yield* makeOpponent;
+
+        const lvl = yield* Player.level;
+
+        const opRef = yield* Ref.make(opponent.maxHealth);
+
+        const intro = display`You meet ${k.red(opponent.name)}, power ${
+          opponent.power
+        }, health: ${yield* opRef}/${opponent.maxHealth}`;
+
+        const rightHandWeapon = yield* Player.rightHand;
+        const leftHandWeapon = yield* Player.leftHand;
+
+        const playerStrike = Random.nextIntBetween(
+          1,
+          lvl * 3 +
+            (Option.isSome(rightHandWeapon)
+              ? weapons[rightHandWeapon.value]
+              : 0) +
+            (Option.isSome(leftHandWeapon) ? weapons[leftHandWeapon.value] : 0)
+        ).pipe(
+          Effect.tap((dmg) => Ref.update(opRef, (h) => Math.max(h - dmg)))
+        );
+
+        const opStrike = Random.nextIntBetween(1, opponent.power).pipe(
+          Effect.tap((dmg) => Player.decreaseHealth(dmg))
+        );
+
+        const opIsAlive = Effect.map(opRef, (h) => h > 0);
+
+        const fightStats = Effect.gen(function* () {
+          yield* display`
+      ${yield* Player.displayName}: ${yield* Player.health}/${yield* Player.getMaxHealth}
+      ${k.red(opponent.name)}: ${yield* opRef}/${opponent.maxHealth}`;
+        });
+
+        yield* clearScreen;
+
+        yield* intro;
+        yield* newLine;
+
+        yield* playerStarts.pipe(
+          Effect.flatMap((playerStarts) =>
+            playerStarts
+              ? Effect.flatMap(
+                  playerStrike,
+                  (dmg) =>
+                    display`You manage to strike it first, dealing ${k.red(
+                      dmg
+                    )} damage`
+                )
+              : opStrike.pipe(
+                  Effect.flatMap(
+                    (dmg) =>
+                      display`It suprises you, dealing you ${k.red(dmg)} damage`
+                  ),
+                  Effect.tapError(
+                    (e) =>
+                      display`It suprises you, dealing you ${k.red(
+                        e.amount
+                      )} damage and killing you.`
+                  )
+                )
+          )
+        );
+
+        yield* newLine;
+
+        yield* fightStats;
+
+        yield* newLine;
+
+        const move: Effect.Effect<void, PlayerDeadException, Player> =
+          Effect.gen(function* () {
+            yield* display`
+    What do you do next?
+  [A] Attack
+  [S] Stats
+  [R] Run for your life`;
+
+            const attack = Effect.gen(function* () {
+              const dmg = yield* playerStrike;
+
+              yield* newLine;
+
+              yield* display`You strike ${k.red(
+                opponent.name
+              )}, dealing ${k.red(dmg)} damage.`;
+
+              if (yield* opIsAlive) {
+                const opDmg = yield* opStrike.pipe(
+                  Effect.tapError(
+                    (e) =>
+                      display`${k.red(
+                        opponent.name
+                      )}, strikes you back, dealing ${k.red(
+                        e.amount
+                      )} damage and killing you.`
+                  )
+                );
+
+                yield* display`${k.red(
+                  opponent.name
+                )}, strikes you back, dealing ${k.red(opDmg)} damage.`;
+
+                yield* newLine;
+
+                yield* fightStats;
+
+                yield* move;
+                return;
+              }
+
+              const gainedExp = yield* Random.nextIntBetween(
+                Math.round(opponent.maxHealth * 0.5),
+                Math.round(opponent.maxHealth * 1.5)
+              );
+              const gainedGold = yield* Random.nextIntBetween(
+                Math.round(opponent.power * 0.5),
+                Math.round(opponent.power * 1.5)
+              );
+
+              const gainedLevels = yield* Player.addExp(gainedExp);
+              yield* Player.updateGold((g) => g + gainedGold);
+
+              yield* display`You killed ${k.red(
+                opponent.name
+              )} gaining ${gainedExp} exp and ${gainedGold} gold`;
+              if (gainedLevels > 0) {
+                yield* display`You gained a new level: ${k
+                  .bold()
+                  .yellow("LEVEL " + String(yield* Player.level))}`;
+              }
+
+              yield* newLine;
+              yield* displayYield();
+              yield* newLine;
+            });
+
+            yield* choice(
+              {
+                a: attack,
+
+                s: seqDiscard(fightStats, move),
+
+                r: Random.nextIntBetween(3, 6).pipe(
+                  Effect.tap((lost) =>
+                    Player.updateGold((g) => Math.max(0, g - lost))
+                  ),
+                  Effect.flatMap(
+                    (lost) => display`You escape, losing ${k.red(lost)} gold`
+                  )
+                ),
+              },
+              { defaultOption: "s" }
+            );
+          });
+
+        if (yield* opIsAlive) {
+          yield* move;
+        }
+      });
+
     const wolfMission = seqDiscard(
       displayYield(k.red("There's a wolf in your path, it looks very hungry")),
       newLine,
@@ -19,7 +190,17 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       [R] Run
       `,
       choice({
-        a: seqDiscard(),
+        a: seqDiscard(
+          fight({
+            makeOpponent: Effect.succeed({
+              name: "Wolf",
+              power: 3,
+              maxHealth: 15,
+              minLevel: 1,
+            }),
+            playerStarts: Effect.succeed(false),
+          })
+        ),
         r: seqDiscard(display("run")),
       })
     );
@@ -49,6 +230,16 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       randomMission
     );
 
+    const randomOpponent = Effect.gen(function* () {
+      const lvl = yield* Player.level;
+
+      const opponentsMatchingPlayerLevel = opponents.filter(
+        (o) => o.minLevel <= lvl
+      );
+
+      return yield* Effect.orDie(Random.choice(opponentsMatchingPlayerLevel));
+    });
+
     const forest: Effect.Effect<void, PlayerDeadException, Player> = Effect.gen(
       function* () {
         yield* display`
@@ -60,7 +251,15 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
         yield* choice(
           {
-            l: seqDiscard(fight, clearScreen, forestBackMsg, forest),
+            l: seqDiscard(
+              fight({
+                makeOpponent: randomOpponent,
+                playerStarts: Random.nextBoolean,
+              }),
+              clearScreen,
+              forestBackMsg,
+              forest
+            ),
             s: seqDiscard(Player.stats, forest),
             r: Effect.void,
           },
@@ -68,175 +267,6 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
         );
       }
     );
-
-    const fight = Effect.gen(function* () {
-      const lvl = yield* Player.level;
-
-      const opponentsMatchingPlayerLevel = opponents.filter(
-        (o) => o.minLevel <= lvl
-      );
-
-      const opponent = yield* Effect.orDie(
-        Random.choice(opponentsMatchingPlayerLevel)
-      );
-
-      const opRef = yield* Ref.make(opponent.maxHealth);
-
-      const intro = display`You meet ${k.red(opponent.name)}, power ${
-        opponent.power
-      }, health: ${yield* opRef}/${opponent.maxHealth}`;
-
-      const rightHandWeapon = yield* Player.rightHand;
-      const leftHandWeapon = yield* Player.leftHand;
-
-      const playerStrike = Random.nextIntBetween(
-        1,
-        lvl * 3 +
-          (Option.isSome(rightHandWeapon)
-            ? weapons[rightHandWeapon.value]
-            : 0) +
-          (Option.isSome(leftHandWeapon) ? weapons[leftHandWeapon.value] : 0)
-      ).pipe(Effect.tap((dmg) => Ref.update(opRef, (h) => Math.max(h - dmg))));
-
-      const opStrike = Random.nextIntBetween(1, opponent.power).pipe(
-        Effect.tap((dmg) => Player.decreaseHealth(dmg))
-      );
-
-      const opIsAlive = Effect.map(opRef, (h) => h > 0);
-
-      const fightStats = Effect.gen(function* () {
-        yield* display`
-      ${yield* Player.displayName}: ${yield* Player.health}/${yield* Player.getMaxHealth}
-      ${k.red(opponent.name)}: ${yield* opRef}/${opponent.maxHealth}`;
-      });
-
-      yield* clearScreen;
-
-      yield* intro;
-      yield* newLine;
-
-      yield* Random.nextBoolean.pipe(
-        Effect.flatMap((playerStarts) =>
-          playerStarts
-            ? Effect.flatMap(
-                playerStrike,
-                (dmg) =>
-                  display`You manage to strike it first, dealing ${k.red(
-                    dmg
-                  )} damage`
-              )
-            : opStrike.pipe(
-                Effect.flatMap(
-                  (dmg) =>
-                    display`It suprises you, dealing you ${k.red(dmg)} damage`
-                ),
-                Effect.tapError(
-                  (e) =>
-                    display`It suprises you, dealing you ${k.red(
-                      e.amount
-                    )} damage and killing you.`
-                )
-              )
-        )
-      );
-
-      yield* newLine;
-
-      yield* fightStats;
-
-      yield* newLine;
-
-      const move: Effect.Effect<void, PlayerDeadException, Player> = Effect.gen(
-        function* () {
-          yield* display`
-    What do you do next?
-  [A] Attack
-  [S] Stats
-  [R] Run for your life`;
-
-          const attack = Effect.gen(function* () {
-            const dmg = yield* playerStrike;
-
-            yield* newLine;
-
-            yield* display`You strike ${k.red(
-              opponent.name
-            )}, dealing ${k.red(dmg)} damage.`;
-
-            if (yield* opIsAlive) {
-              const opDmg = yield* opStrike.pipe(
-                Effect.tapError(
-                  (e) =>
-                    display`${k.red(
-                      opponent.name
-                    )}, strikes you back, dealing ${k.red(
-                      e.amount
-                    )} damage and killing you.`
-                )
-              );
-
-              yield* display`${k.red(
-                opponent.name
-              )}, strikes you back, dealing ${k.red(opDmg)} damage.`;
-
-              yield* newLine;
-
-              yield* fightStats;
-
-              yield* move;
-              return;
-            }
-
-            const gainedExp = yield* Random.nextIntBetween(
-              Math.round(opponent.maxHealth * 0.5),
-              Math.round(opponent.maxHealth * 1.5)
-            );
-            const gainedGold = yield* Random.nextIntBetween(
-              Math.round(opponent.power * 0.5),
-              Math.round(opponent.power * 1.5)
-            );
-
-            const gainedLevels = yield* Player.addExp(gainedExp);
-            yield* Player.updateGold((g) => g + gainedGold);
-
-            yield* display`You killed ${k.red(
-              opponent.name
-            )} gaining ${gainedExp} exp and ${gainedGold} gold`;
-            if (gainedLevels > 0) {
-              yield* display`You gained a new level: ${k
-                .bold()
-                .yellow("LEVEL " + String(yield* Player.level))}`;
-            }
-
-            yield* newLine;
-            yield* displayYield();
-            yield* newLine;
-          });
-
-          yield* choice(
-            {
-              a: attack,
-
-              s: seqDiscard(fightStats, move),
-
-              r: Random.nextIntBetween(3, 6).pipe(
-                Effect.tap((lost) =>
-                  Player.updateGold((g) => Math.max(0, g - lost))
-                ),
-                Effect.flatMap(
-                  (lost) => display`You escape, losing ${k.red(lost)} gold`
-                )
-              ),
-            },
-            { defaultOption: "s" }
-          );
-        }
-      );
-
-      if (yield* opIsAlive) {
-        yield* move;
-      }
-    });
 
     return {
       intro,
@@ -247,12 +277,14 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
   dependencies: [Display.Default],
 }) {}
 
-const opponents: {
+type Opponent = {
   name: string;
   power: number;
   maxHealth: number;
   minLevel: number;
-}[] = [
+};
+
+const opponents: Opponent[] = [
   // Level 1-5: Early Game
   { name: "Small Goblin", power: 2, maxHealth: 5, minLevel: 1 },
   { name: "Goblin Scout", power: 2, maxHealth: 6, minLevel: 1 },

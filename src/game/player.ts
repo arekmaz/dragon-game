@@ -31,10 +31,13 @@ const maxHealth = (level: number) => 20 + (level - 1) * 2;
 
 const getExpRequiredForLvl = (lvl: number) => {
   const baseExp = 50;
+  const growthFactor = 1.2;
+  const quadraticFactor = 0.5;
 
-  const growthFactor = 1.15;
-
-  return Math.floor(baseExp * Math.pow(growthFactor, lvl - 1));
+  return Math.floor(
+    baseExp * Math.pow(growthFactor, lvl - 1) +
+      quadraticFactor * Math.pow(lvl - 1, 2)
+  );
 };
 
 const lvlByExp = (exp: number) => {
