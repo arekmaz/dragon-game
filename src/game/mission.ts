@@ -5,17 +5,40 @@ import { DeterministicRandom } from "../DeterministicRandom.ts";
 import { seqDiscard } from "../effectHelpers.ts";
 import { fight } from "./fight.ts";
 
-function defineRelatedKeys<T extends Record<string, any>>(
+type Values<T> = T[keyof T];
+
+type Step<
+  Id,
+  All extends Record<string, any>,
+  Deps extends Exclude<keyof All, Id> = Exclude<keyof All, Id>
+> = {
+  deps: Deps[];
+  run: (deps: {
+    // [K in Deps]: All;
+    [K in Deps]: Effect.Effect.Success<ReturnType<All[K]["run"]>>;
+  }) => any;
+};
+
+function defineRelatedKeys<
+  T extends Record<string, any>,
+  U extends {
+    [K in keyof T]: Step<K, T>;
+  }
+>(
   obj: T & {
-    [K in keyof T]: { deps: Exclude<keyof T, K>[] };
+    [K in keyof T]: Step<K, U> & {
+      run: (
+        ...a: Parameters<Step<K, U>["run"]>
+      ) => Effect.Effect<any, any, any>;
+    };
   }
 ): T {
   return obj;
 }
 
-defineRelatedKeys({
-  a: { deps: ["b"] },
-  b: { deps: ["a"] },
+const steps = defineRelatedKeys({
+  a: { deps: ["b"], run: (deps) => Effect.succeed(1) },
+  b: { deps: ["a"], run: (deps) => Effect.succeed(2) },
 });
 
 export class Mission extends Effect.Service<Mission>()("Mission", {
