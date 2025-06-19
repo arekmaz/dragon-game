@@ -1,24 +1,20 @@
 {
   "player": {
     "name": "random-name",
-    "health": 26,
+    "health": 8,
     "eq": {
-      "leftHand": "greathalberd",
-      "rightHand": "greatmace",
+      "leftHand": "dagger",
+      "rightHand": "stick",
       "items": [
         {
           "type": "weapon",
-          "name": "stick"
-        },
-        {
-          "type": "weapon",
-          "name": "greathalberd"
+          "name": "dagger"
         }
       ]
     },
-    "gold": 2,
-    "exp": 980,
+    "gold": 390,
+    "exp": 33,
     "class": "mage"
   },
-  "bankBalance": 225
+  "bankBalance": 50
 }

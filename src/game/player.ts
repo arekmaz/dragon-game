@@ -143,8 +143,14 @@ export class Player extends Effect.Service<Player>()("Player", {
       updateHealth((h) => h - dmg).pipe(
         Effect.filterOrFail(
           (h) => h > 0,
-          () => new PlayerDeadException({ reason: "damage", amount: dmg })
+          () =>
+            new PlayerDeadException({ data: { reason: "damage", amount: dmg } })
         )
+      );
+
+    const dieOfPoison = (poison: string) =>
+      Effect.fail(
+        new PlayerDeadException({ data: { reason: "poison", type: poison } })
       );
 
     const increaseHealth = (health: number) => updateHealth((h) => h + health);
@@ -174,6 +180,7 @@ export class Player extends Effect.Service<Player>()("Player", {
       decreaseHealth,
       increaseHealth,
       updateEq,
+      dieOfPoison,
     };
   }),
   accessors: true,
@@ -183,6 +190,10 @@ export class Player extends Effect.Service<Player>()("Player", {
 export class PlayerDeadException extends Data.TaggedError(
   "PlayerDeadException"
 )<{
-  reason: "damage";
-  amount: number;
+  data:
+    | { reason: "damage"; amount: number }
+    | {
+        reason: "poison";
+        type: string;
+      };
 }> {}
