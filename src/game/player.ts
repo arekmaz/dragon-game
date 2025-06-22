@@ -182,7 +182,6 @@ export class Player extends Effect.Service<Player>()("Player", {
       dieOfPoison,
     };
   }),
-  accessors: true,
   dependencies: [Display.Default],
 }) {}
 

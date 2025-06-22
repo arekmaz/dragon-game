@@ -96,7 +96,6 @@ export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
     return { saveGame, loadGame };
   }),
   dependencies: [NodeFileSystem.layer, Bank.Default, Player.Default],
-  accessors: true,
 }) {}
 
 const game: Effect.Effect<
@@ -147,6 +146,8 @@ const gameSetup: Effect.Effect<
 > = Effect.gen(function* () {
   const { display, newLine, choice, displayYield } = yield* Display;
 
+  const saveGame = yield* SaveGame;
+
   const terminal = yield* Terminal.Terminal;
   const player = yield* Player;
 
@@ -161,7 +162,7 @@ const gameSetup: Effect.Effect<
   yield* choice(
     {
       l: Effect.gen(function* () {
-        yield* SaveGame.loadGame().pipe(
+        yield* saveGame.loadGame().pipe(
           Effect.tapError(Effect.logDebug),
           Effect.tapError((error) =>
             seqDiscard(
