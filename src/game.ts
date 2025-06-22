@@ -1,14 +1,18 @@
-import { Terminal } from "@effect/platform";
+import { FileSystem, Terminal } from "@effect/platform";
+import { NodeFileSystem } from "@effect/platform-node";
 import {
+  Data,
   Effect,
-  Ref,
-  Schema,
-  ParseResult,
+  Layer,
   Logger,
   LogLevel,
-  Data,
-  Layer,
+  ParseResult,
+  Ref,
+  Schema,
 } from "effect";
+import { seqDiscard } from "./effectHelpers.ts";
+import { Bank } from "./game/bank.ts";
+import { Display, k } from "./game/display.ts";
 import {
   EqItemSchema,
   Player,
@@ -17,17 +21,7 @@ import {
   PlayerData,
 } from "./game/player.ts";
 import { TownSquare } from "./game/townSquare.ts";
-import { Forest } from "./game/forest.ts";
-import { Healer } from "./game/healer.ts";
-import { Inn } from "./game/inn.ts";
-import { Display, k } from "./game/display.ts";
-import { Bank } from "./game/bank.ts";
-import { WeaponSchema, Weaponsmith } from "./game/weaponsmith.ts";
-import { Armorsmith } from "./game/armorsmith.ts";
-import { FileSystem } from "@effect/platform";
-import { NodeFileSystem } from "@effect/platform-node";
-import { seqDiscard } from "./effectHelpers.ts";
-import { Mission } from "./game/mission.ts";
+import { WeaponSchema } from "./game/weaponsmith.ts";
 
 class GameData extends Schema.Class<GameData>("GameData")({
   player: PlayerData,
@@ -240,14 +234,7 @@ const gameSetup: Effect.Effect<
 
 const GameLive = Layer.mergeAll(
   TownSquare.Default,
-  Forest.Default,
-  Mission.Default,
-  Healer.Default,
-  Inn.Default,
-  Weaponsmith.Default,
-  Armorsmith.Default,
   SaveGame.Default,
-  Bank.Default,
   Player.Default,
   Display.Default
 );
