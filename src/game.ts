@@ -127,7 +127,7 @@ const game: Effect.Effect<
           yield* player.updateGold(() => 0);
           const maxHealth = yield* player.getMaxHealth;
           yield* player.updateHealth(() => maxHealth);
-          yield* displayYield`You died by ${e.data.type} poisoning, you lost your gold, the game will restart`;
+          yield* displayYield`You died by ${e.type} poisoning, you lost your gold, the game will restart`;
           yield* newLine;
 
           yield* game;

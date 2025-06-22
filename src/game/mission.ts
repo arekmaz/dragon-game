@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { Display, k } from "./display.ts";
-import { Player, PlayerDeadDamageException } from "./player.ts";
+import { Player } from "./player.ts";
 import { DeterministicRandom } from "../DeterministicRandom.ts";
 import { seqDiscard } from "../effectHelpers.ts";
 import { FightService } from "./fight.ts";
