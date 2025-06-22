@@ -156,12 +156,10 @@ export class Game extends Effect.Service<Game>()("Game", {
   ],
 }) {}
 
+const GameLive = Layer.mergeAll(Game.Default, Display.Default);
+
 export const runGame = seqDiscard(
   Display.use((s) => s.clearScreen),
   Game.use((s) => s.gameSetup),
   Game.use((s) => s.game)
-).pipe(
-  Effect.asVoid,
-  Effect.provide(Layer.mergeAll(Game.Default, Display.Default)),
-  Logger.withMinimumLogLevel(LogLevel.Debug)
-);
+).pipe(Effect.provide(GameLive), Logger.withMinimumLogLevel(LogLevel.Debug));
