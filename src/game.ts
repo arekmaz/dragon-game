@@ -1,105 +1,11 @@
-import { FileSystem, Terminal } from "@effect/platform";
-import { NodeFileSystem, NodeTerminal } from "@effect/platform-node";
-import {
-  Data,
-  Effect,
-  Layer,
-  Logger,
-  LogLevel,
-  ParseResult,
-  Ref,
-  Schema,
-} from "effect";
+import { Terminal } from "@effect/platform";
+import { NodeTerminal } from "@effect/platform-node";
+import { Effect, Layer, Logger, LogLevel, Ref, Schema } from "effect";
 import { seqDiscard } from "./effectHelpers.ts";
-import { Bank } from "./game/bank.ts";
 import { Display, k } from "./game/display.ts";
-import {
-  EqItemSchema,
-  Player,
-  type PlayerClass,
-  playerClasses,
-  PlayerData,
-} from "./game/player.ts";
+import { Player, type PlayerClass, playerClasses } from "./game/player.ts";
 import { TownSquare } from "./game/townSquare.ts";
-import { WeaponSchema } from "./game/weaponsmith.ts";
-
-class GameData extends Schema.Class<GameData>("GameData")({
-  player: PlayerData,
-  bankBalance: Schema.NonNegativeInt,
-}) {}
-
-class PersistedGameData extends Schema.Class<PersistedGameData>(
-  "PersistedGameData"
-)({
-  ...GameData.fields,
-  player: Schema.Struct({
-    ...PlayerData.fields,
-    eq: Schema.Struct({
-      leftHand: Schema.OptionFromNullOr(WeaponSchema),
-      rightHand: Schema.OptionFromNullOr(WeaponSchema),
-      items: Schema.Data(Schema.Array(EqItemSchema)),
-    }),
-  }),
-}) {}
-
-const JsonGameData = Schema.parseJson(
-  Schema.transform(PersistedGameData, GameData, {
-    decode: (encoded) => encoded,
-    encode: (decoded) => ({
-      ...decoded,
-      player: {
-        ...decoded.player,
-        eq: {
-          ...decoded.player.eq,
-          items: Data.array(decoded.player.eq.items),
-        },
-      },
-    }),
-    strict: true,
-  }),
-  { space: 2 }
-);
-
-export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
-  effect: Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const player = yield* Player;
-    const bank = yield* Bank;
-
-    const defaultSaveFile = "game.json";
-
-    const saveGame = (fileName: string = defaultSaveFile) =>
-      Effect.gen(function* () {
-        const saveData = yield* Schema.encode(JsonGameData)({
-          player: yield* player.data,
-          bankBalance: yield* bank.bankBalanceRef,
-        });
-
-        yield* fs.writeFileString(fileName, saveData);
-      });
-
-    const loadGame = (fileName: string = defaultSaveFile) =>
-      Effect.gen(function* () {
-        const gameData = yield* fs.readFileString(fileName).pipe(
-          Effect.flatMap(Schema.decode(JsonGameData)),
-          Effect.tapErrorTag("ParseError", (e) =>
-            Effect.logError(ParseResult.TreeFormatter.formatErrorSync(e))
-          )
-        );
-
-        yield* Ref.update(player.data, () => gameData.player);
-        yield* Ref.update(bank.bankBalanceRef, () => gameData.bankBalance);
-      });
-
-    return { saveGame, loadGame };
-  }),
-  dependencies: [
-    NodeFileSystem.layer,
-    Bank.Default,
-    Player.Default,
-    NodeTerminal.layer,
-  ],
-}) {}
+import { SaveGame } from "./SaveGame.ts";
 
 export class Game extends Effect.Service<Game>()("Game", {
   effect: Effect.gen(function* () {
