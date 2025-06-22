@@ -106,7 +106,7 @@ export class Display extends Effect.Service<Display>()("Display", {
 
         input = yield* terminal.readInput.pipe(
           Effect.map((a) => a.key.name.toLowerCase()),
-          Effect.orElseSucceed(() => "")
+          Effect.orDie
         );
 
         if (input === "return") {

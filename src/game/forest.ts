@@ -18,11 +18,12 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
     const { fight } = yield* FightService;
 
-    const randomMission = Random.nextBoolean.pipe(
-      Effect.flatMap((showMission) =>
-        showMission ? mission.randomMission : Effect.void
-      )
-    );
+    const randomMission = yield* Random.choice([
+      mission.randomMission,
+      Effect.void,
+      Effect.void,
+      Effect.void,
+    ]).pipe(Effect.orDie);
 
     const intro = seqDiscard(
       display`You arrive at the deep dark forest`,
