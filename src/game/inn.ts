@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { Display, k } from "./display.ts";
 import { Player } from "./player.ts";
-import { SaveGame } from "../SaveGame.ts";
+import { SaveGame } from "./saveGame.ts";
 import { seqDiscard } from "../effectHelpers.ts";
 
 export class Inn extends Effect.Service<Inn>()("Inn", {

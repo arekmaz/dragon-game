@@ -11,7 +11,7 @@ import {
 import { Bank } from "./bank.ts";
 import { Weaponsmith } from "./weaponsmith.ts";
 import { Armorsmith } from "./armorsmith.ts";
-import { SaveGame } from "../SaveGame.ts";
+import { SaveGame } from "./saveGame.ts";
 import { seqDiscard } from "../effectHelpers.ts";
 
 export class QuitTownSquareException extends Data.TaggedError(

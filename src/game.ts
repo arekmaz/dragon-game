@@ -5,7 +5,7 @@ import { seqDiscard } from "./effectHelpers.ts";
 import { Display, k } from "./game/display.ts";
 import { Player, type PlayerClass, playerClasses } from "./game/player.ts";
 import { TownSquare } from "./game/townSquare.ts";
-import { SaveGame } from "./SaveGame.ts";
+import { SaveGame } from "./game/saveGame.ts";
 
 export class Game extends Effect.Service<Game>()("Game", {
   effect: Effect.gen(function* () {

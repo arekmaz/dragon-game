@@ -2,9 +2,9 @@ import { NodeFileSystem } from "@effect/platform-node";
 import { NodeTerminal } from "@effect/platform-node";
 import { FileSystem } from "@effect/platform";
 import { Data, Effect, ParseResult, Ref, Schema } from "effect";
-import { Bank } from "./game/bank.ts";
-import { EqItemSchema, Player, PlayerData } from "./game/player.ts";
-import { WeaponSchema } from "./game/weaponsmith.ts";
+import { Bank } from "./bank.ts";
+import { EqItemSchema, Player, PlayerData } from "./player.ts";
+import { WeaponSchema } from "./weaponsmith.ts";
 
 class GameData extends Schema.Class<GameData>("GameData")({
   player: PlayerData,
