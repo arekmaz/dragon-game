@@ -2,7 +2,7 @@ import { Data, Effect, Option, pipe, Record, String } from "effect";
 import { seqDiscard } from "../effectHelpers.ts";
 import { Display, k } from "./display.ts";
 import { EqItemSchema, Player } from "./player.ts";
-import { Weapon, weapons } from "./weapons.ts";
+import { type Weapon, weapons } from "./weapons.ts";
 
 const weaponMinLevel: Record<Weapon, number> = {
   stick: 1,
