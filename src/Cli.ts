@@ -14,7 +14,7 @@ const command = Command.make(
         yield* Effect.sleep(2000);
       }
 
-      return yield* Layer.launch(GameCmd.Default);
+      return yield* Layer.launch(GameCmd.layer);
     }).pipe(Logger.withMinimumLogLevel(debug ? LogLevel.Debug : LogLevel.Info));
   })
 );

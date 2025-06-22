@@ -1,11 +1,11 @@
 import { Terminal } from "@effect/platform";
 import { NodeTerminal } from "@effect/platform-node";
-import { Effect, Layer, Logger, LogLevel, Ref, Schema } from "effect";
+import { Context, Effect, Layer, Ref, Schema } from "effect";
 import { seqDiscard } from "./effectHelpers.ts";
 import { Display, k } from "./game/display.ts";
 import { Player, type PlayerClass, playerClasses } from "./game/player.ts";
-import { TownSquare } from "./game/townSquare.ts";
 import { SaveGame } from "./game/saveGame.ts";
+import { TownSquare } from "./game/townSquare.ts";
 
 export class Game extends Effect.Service<Game>()("Game", {
   effect: Effect.gen(function* () {
@@ -156,16 +156,16 @@ export class Game extends Effect.Service<Game>()("Game", {
   ],
 }) {}
 
-export class GameCmd extends Effect.Service<GameCmd>()("GameCmd", {
-  effect: Effect.gen(function* () {
-    const { clearScreen } = yield* Display;
-    const { gameSetup, game } = yield* Game;
+export class GameCmd extends Context.Tag("GameCmd")<GameCmd, void>() {
+  static layer = Layer.effect(
+    this,
+    Effect.gen(function* () {
+      const { clearScreen } = yield* Display;
+      const { gameSetup, game } = yield* Game;
 
-    yield* clearScreen;
-    yield* gameSetup;
-    yield* game;
-
-    return {};
-  }),
-  dependencies: [Display.Default, Game.Default],
-}) {}
+      yield* clearScreen;
+      yield* gameSetup;
+      yield* game;
+    })
+  ).pipe(Layer.provide([Display.Default, Game.Default]));
+}
