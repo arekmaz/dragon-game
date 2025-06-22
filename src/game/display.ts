@@ -79,55 +79,54 @@ export class Display extends Effect.Service<Display>()("Display", {
 
     const newLine = display``;
 
-    const choice = <A, E, R, K extends string>(
+    const choice = Effect.fn("choice")(function* <A, R, E, K extends string>(
       choices: Record<K, Effect.Effect<A, E, R>>,
       opts: {
         defaultOption?: NoInfer<K>;
         promptPrefix?: string;
       } = {}
-    ) =>
-      Effect.gen(function* () {
-        let input: string = "";
+    ) {
+      let input: string = "";
 
-        const displayChoices = pipe(
-          choices,
-          Record.keys,
-          Array.map(String.toUpperCase),
-          Array.join(",")
+      const displayChoices = pipe(
+        choices,
+        Record.keys,
+        Array.map(String.toUpperCase),
+        Array.join(",")
+      );
+
+      const prompt = displayRaw`\n${
+        opts.promptPrefix ?? "Enter an option"
+      } [${displayChoices}]: ${
+        opts.defaultOption ? `(${opts.defaultOption.toUpperCase()})` : ""
+      }`;
+
+      while (!(input in choices)) {
+        yield* prompt;
+
+        input = yield* terminal.readInput.pipe(
+          Effect.map((a) => a.key.name.toLowerCase()),
+          Effect.orElseSucceed(() => "")
         );
 
-        const prompt = displayRaw`\n${
-          opts.promptPrefix ?? "Enter an option"
-        } [${displayChoices}]: ${
-          opts.defaultOption ? `(${opts.defaultOption.toUpperCase()})` : ""
-        }`;
-
-        while (!(input in choices)) {
-          yield* prompt;
-
-          input = yield* terminal.readInput.pipe(
-            Effect.map((a) => a.key.name.toLowerCase()),
-            Effect.orElseSucceed(() => "")
-          );
-
-          if (input === "return") {
-            input = opts.defaultOption ?? "";
-          }
-
-          if (input in choices) {
-            continue;
-          }
-
-          yield* newLine;
+        if (input === "return") {
+          input = opts.defaultOption ?? "";
         }
 
-        yield* displayRaw`${opts.defaultOption ? " " : ""}${input} `;
+        if (input in choices) {
+          continue;
+        }
+
         yield* newLine;
+      }
 
-        const result = yield* choices[input as K];
+      yield* displayRaw`${opts.defaultOption ? " " : ""}${input} `;
+      yield* newLine;
 
-        return result;
-      });
+      const result = yield* choices[input as K];
+
+      return result;
+    });
 
     const clearScreen = Effect.sync(console.clear);
 
