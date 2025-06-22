@@ -8,42 +8,39 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
   effect: Effect.gen(function* () {
     const terminal = yield* Terminal.Terminal;
     const { display, newLine, choice } = yield* Display;
+    const player = yield* Player;
 
-    const healer: Effect.Effect<void, never, Player> = Effect.gen(function* () {
-      const playerMaxHealth = yield* Player.getMaxHealth;
+    const healer: Effect.Effect<void, never, never> = Effect.gen(function* () {
+      const playerMaxHealth = yield* player.getMaxHealth;
 
-      const healFull = Player.pipe(
-        Effect.flatMap(({ data }) =>
-          Ref.modify(data, (data) => {
-            const healthToRestore = playerMaxHealth - data.health;
+      const healFull = Ref.modify(player.data, (data) => {
+        const healthToRestore = playerMaxHealth - data.health;
 
-            if (data.gold >= healthToRestore * healthPointCost) {
-              const cost = healthToRestore * healthPointCost;
-              return [
-                {
-                  restoredHealth: healthToRestore,
-                  cost,
-                },
-                { ...data, health: playerMaxHealth, gold: data.gold - cost },
-              ];
-            }
+        if (data.gold >= healthToRestore * healthPointCost) {
+          const cost = healthToRestore * healthPointCost;
+          return [
+            {
+              restoredHealth: healthToRestore,
+              cost,
+            },
+            { ...data, health: playerMaxHealth, gold: data.gold - cost },
+          ];
+        }
 
-            const maxHealthRestorable = Math.floor(data.gold / healthPointCost);
-            const cost = maxHealthRestorable * healthPointCost;
+        const maxHealthRestorable = Math.floor(data.gold / healthPointCost);
+        const cost = maxHealthRestorable * healthPointCost;
 
-            return [
-              {
-                restoredHealth: maxHealthRestorable,
-                cost,
-              },
-              { ...data, health: playerMaxHealth, gold: data.gold - cost },
-            ];
-          })
-        )
-      );
+        return [
+          {
+            restoredHealth: maxHealthRestorable,
+            cost,
+          },
+          { ...data, health: playerMaxHealth, gold: data.gold - cost },
+        ];
+      });
 
       const healSpecified = Effect.gen(function* () {
-        const data = yield* Player.data;
+        const data = yield* player.data;
 
         const maxPointsAffordable = Math.min(
           Math.floor(data.gold / healthPointCost),
@@ -72,8 +69,8 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
         const healthToRestore = yield* readAmount;
         const cost = healthToRestore * healthPointCost;
 
-        yield* Player.updateGold((g) => g - cost);
-        yield* Player.increaseHealth(healthToRestore);
+        yield* player.updateGold((g) => g - cost);
+        yield* player.increaseHealth(healthToRestore);
 
         return { restoredHealth: healthToRestore, cost };
       });
@@ -103,7 +100,7 @@ export class Healer extends Effect.Service<Healer>()("Healer", {
             Effect.zipRight(newLine),
             Effect.zipRight(healer)
           ),
-          s: Player.stats.pipe(Effect.zipRight(healer)),
+          s: player.stats.pipe(Effect.zipRight(healer)),
           r: Effect.void,
         },
         { defaultOption: "s" }
@@ -121,7 +118,7 @@ What do you need?
       healer,
     };
   }),
-  dependencies: [Display.Default, NodeTerminal.layer],
+  dependencies: [Display.Default, NodeTerminal.layer, Player.Default],
 }) {}
 
 export const healthPointCost = 5;

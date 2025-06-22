@@ -9,12 +9,14 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
   effect: Effect.gen(function* () {
     const { display, newLine, choice, displayRaw } = yield* Display;
     const terminal = yield* Terminal;
+    const player = yield* Player;
+
     const bankBalanceRef = yield* Ref.make(0);
 
     const intro = display`Welcome to the bank, how can I help you?`;
 
     const depositGold = Effect.gen(function* () {
-      const playerGold = yield* Player.gold;
+      const playerGold = yield* player.gold;
 
       const readAmount: Effect.Effect<number, never> = terminal.readLine.pipe(
         Effect.flatMap(
@@ -36,15 +38,15 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
 
       const amount = yield* readAmount;
 
-      yield* Player.updateGold((g) => g - amount);
+      yield* player.updateGold((g) => g - amount);
       yield* Ref.update(bankBalanceRef, (b) => b + amount);
       yield* display`Deposited ${amount} gold`;
     });
 
     const depositAllGold = Effect.gen(function* () {
-      const playerGold = yield* Player.gold;
+      const playerGold = yield* player.gold;
 
-      yield* Player.updateGold((g) => g - playerGold);
+      yield* player.updateGold((g) => g - playerGold);
       yield* Ref.update(bankBalanceRef, (b) => b + playerGold);
       yield* display`Deposited everything - ${k.yellow(playerGold)} gold`;
     });
@@ -58,7 +60,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
     const withdrawAllGold = Effect.gen(function* () {
       const bankBalance = yield* bankBalanceRef;
 
-      yield* Player.updateGold((g) => g + bankBalance);
+      yield* player.updateGold((g) => g + bankBalance);
       yield* Ref.update(bankBalanceRef, (b) => 0);
       yield* display`Withdrew everything - ${k.yellow(bankBalance)} gold`;
     });
@@ -87,12 +89,12 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
 
       const amount = yield* readAmount;
 
-      yield* Player.updateGold((g) => g + amount);
+      yield* player.updateGold((g) => g + amount);
       yield* Ref.update(bankBalanceRef, (b) => b - amount);
       yield* display`Withdrew ${k.yellow(amount)} gold`;
     });
 
-    const bank: Effect.Effect<void, never, Player> = Effect.gen(function* () {
+    const bank: Effect.Effect<void, never, never> = Effect.gen(function* () {
       yield* display`
   [B] Check your balance
   [A] Deposit all gold
@@ -109,7 +111,7 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
           d: seqDiscard(newLine, depositGold, bank),
           w: seqDiscard(newLine, withdrawAllGold, bank),
           c: seqDiscard(newLine, withdrawSomeGold, bank),
-          s: seqDiscard(Player.stats, bank),
+          s: seqDiscard(player.stats, bank),
           r: Effect.void,
         },
         { defaultOption: "s" }
@@ -122,5 +124,5 @@ export class Bank extends Effect.Service<Bank>()("Bank", {
       bankBalanceRef,
     };
   }),
-  dependencies: [Display.Default, NodeTerminal.layer],
+  dependencies: [Display.Default, NodeTerminal.layer, Player.Default],
 }) {}

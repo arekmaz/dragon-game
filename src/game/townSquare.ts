@@ -3,7 +3,11 @@ import { Display } from "./display.ts";
 import { Forest } from "./forest.ts";
 import { Healer } from "./healer.ts";
 import { Inn } from "./inn.ts";
-import { Player, PlayerDeadException } from "./player.ts";
+import {
+  Player,
+  PlayerDeadDamageException,
+  PlayerDeadPoisonException,
+} from "./player.ts";
 import { Bank } from "./bank.ts";
 import { Weaponsmith } from "./weaponsmith.ts";
 import { Armorsmith } from "./armorsmith.ts";
@@ -18,6 +22,7 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
   effect: Effect.gen(function* () {
     const { display, newLine, choice, clearScreen, displayYield } =
       yield* Display;
+    const player = yield* Player;
     const forest = yield* Forest;
     const healer = yield* Healer;
     const inn = yield* Inn;
@@ -41,8 +46,8 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
 
     const townSquare: Effect.Effect<
       void,
-      PlayerDeadException,
-      Player | SaveGame
+      PlayerDeadDamageException | PlayerDeadPoisonException,
+      never
     > = Effect.gen(function* () {
       yield* display`
         [F] Go to the forest
@@ -106,7 +111,7 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
             backToTownSquare,
             townSquare
           ),
-          s: seqDiscard(Player.stats, townSquare),
+          s: seqDiscard(player.stats, townSquare),
           q: seqDiscard(display`quitting...`, Effect.sleep(1000)),
         },
         { defaultOption: "s" }
@@ -125,5 +130,8 @@ export class TownSquare extends Effect.Service<TownSquare>()("TownSquare", {
     Inn.Default,
     Weaponsmith.Default,
     Armorsmith.Default,
+    Bank.Default,
+    Player.Default,
+    SaveGame.Default,
   ],
 }) {}

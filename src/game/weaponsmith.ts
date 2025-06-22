@@ -51,20 +51,22 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
   effect: Effect.gen(function* () {
     const { display, newLine, choice } = yield* Display;
 
+    const player = yield* Player;
+
     const intro = seqDiscard(
       display`Welcome to the Weaponsmith, you can buy new weapons here.`,
       newLine,
       Effect.gen(function* () {
-        const playerLevel = yield* Player.level;
-        yield* display`Current player level: ${playerLevel}, current player weapons: ${Option.getOrElse(yield* Player.rightHand, () => "-")}/${Option.getOrElse(yield* Player.leftHand, () => "-")}`;
+        const playerLevel = yield* player.level;
+        yield* display`Current player level: ${playerLevel}, current player weapons: ${Option.getOrElse(yield* player.rightHand, () => "-")}/${Option.getOrElse(yield* player.leftHand, () => "-")}`;
       })
     );
 
     const buyWeapon = Effect.gen(function* () {
-      const playerLevel = yield* Player.level;
-      const rightHandWeapon = yield* Player.rightHand;
-      const leftHandWeapon = yield* Player.leftHand;
-      const { items } = yield* Player.eq;
+      const playerLevel = yield* player.level;
+      const rightHandWeapon = yield* player.rightHand;
+      const leftHandWeapon = yield* player.leftHand;
+      const { items } = yield* player.eq;
 
       yield* newLine;
 
@@ -129,7 +131,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                 [
                   i.toString(),
                   Effect.gen(function* () {
-                    const playerGold = yield* Player.gold;
+                    const playerGold = yield* player.gold;
                     const cost = weaponCost[weapon];
 
                     if (playerGold < cost) {
@@ -138,8 +140,8 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                       return;
                     }
 
-                    yield* Player.updateGold((g) => g - cost);
-                    yield* Player.updateEq((eq) => ({
+                    yield* player.updateGold((g) => g - cost);
+                    yield* player.updateEq((eq) => ({
                       ...eq,
                       items: Data.array([
                         ...eq.items,
@@ -161,7 +163,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                     yield* choice(
                       {
                         l: seqDiscard(
-                          Player.updateEq((eq) =>
+                          player.updateEq((eq) =>
                             Option.isSome(eq.leftHand)
                               ? {
                                   ...eq,
@@ -188,7 +190,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
                           display`Equipped on left hand`
                         ),
                         r: seqDiscard(
-                          Player.updateEq((eq) =>
+                          player.updateEq((eq) =>
                             Option.isSome(eq.rightHand)
                               ? {
                                   ...eq,
@@ -232,7 +234,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
       yield* newLine;
     });
 
-    const weaponsmith: Effect.Effect<void, never, Player> = Effect.gen(
+    const weaponsmith: Effect.Effect<void, never, never> = Effect.gen(
       function* () {
         yield* display`
         [W] Buy a weapon
@@ -243,7 +245,7 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
         yield* choice(
           {
             w: seqDiscard(buyWeapon, weaponsmith),
-            s: seqDiscard(Player.stats, weaponsmith),
+            s: seqDiscard(player.stats, weaponsmith),
             r: Effect.void,
           },
           { defaultOption: "s" }
@@ -254,5 +256,5 @@ export class Weaponsmith extends Effect.Service<Weaponsmith>()("weaponsmith", {
     return { intro, weaponsmith };
   }),
 
-  dependencies: [Display.Default],
+  dependencies: [Display.Default, Player.Default],
 }) {}

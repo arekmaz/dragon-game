@@ -1,15 +1,22 @@
 import { Effect, Random } from "effect";
 import { seqDiscard } from "../effectHelpers.ts";
 import { Display } from "./display.ts";
-import { fight, opponents } from "./fight.ts";
+import { FightService, opponents } from "./fight.ts";
 import { Mission } from "./mission.ts";
-import { Player, PlayerDeadException } from "./player.ts";
+import {
+  Player,
+  PlayerDeadDamageException,
+  PlayerDeadPoisonException,
+} from "./player.ts";
 
 export class Forest extends Effect.Service<Forest>()("Forest", {
   effect: Effect.gen(function* () {
     const { display, newLine, choice, clearScreen } = yield* Display;
 
     const mission = yield* Mission;
+    const player = yield* Player;
+
+    const { fight } = yield* FightService;
 
     const randomMission = Random.nextBoolean.pipe(
       Effect.flatMap((showMission) =>
@@ -30,7 +37,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
     );
 
     const randomOpponent = Effect.gen(function* () {
-      const lvl = yield* Player.level;
+      const lvl = yield* player.level;
 
       const opponentsMatchingPlayerLevel = opponents.filter(
         (o) => o.minLevel <= lvl
@@ -39,32 +46,35 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       return yield* Effect.orDie(Random.choice(opponentsMatchingPlayerLevel));
     });
 
-    const forest: Effect.Effect<void, PlayerDeadException, Player | Display> =
-      Effect.gen(function* () {
-        yield* display`
+    const forest: Effect.Effect<
+      void,
+      PlayerDeadDamageException | PlayerDeadPoisonException,
+      never
+    > = Effect.gen(function* () {
+      yield* display`
     What do you do next?
 
     [L] look for something to kill
     [S] show stats
     [R] return to the town square`;
 
-        yield* choice(
-          {
-            l: seqDiscard(
-              fight({
-                makeOpponent: randomOpponent,
-                playerStarts: Random.nextBoolean,
-              }),
-              clearScreen,
-              forestBackMsg,
-              forest
-            ),
-            s: seqDiscard(Player.stats, forest),
-            r: Effect.void,
-          },
-          { defaultOption: "s" }
-        );
-      });
+      yield* choice(
+        {
+          l: seqDiscard(
+            fight({
+              makeOpponent: randomOpponent,
+              playerStarts: Random.nextBoolean,
+            }),
+            clearScreen,
+            forestBackMsg,
+            forest
+          ),
+          s: seqDiscard(player.stats, forest),
+          r: Effect.void,
+        },
+        { defaultOption: "s" }
+      );
+    });
 
     return {
       intro,
@@ -72,5 +82,10 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
       forest,
     };
   }),
-  dependencies: [Display.Default],
+  dependencies: [
+    Display.Default,
+    Mission.Default,
+    Player.Default,
+    FightService.Default,
+  ],
 }) {}

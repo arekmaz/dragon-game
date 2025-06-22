@@ -1,43 +1,19 @@
 import { Effect } from "effect";
 import { Display, k } from "./display.ts";
-import { Player, PlayerDeadException } from "./player.ts";
+import { Player, PlayerDeadDamageException } from "./player.ts";
 import { DeterministicRandom } from "../DeterministicRandom.ts";
 import { seqDiscard } from "../effectHelpers.ts";
-import { fight } from "./fight.ts";
-
-type Node<AllKeys extends string, Self extends AllKeys> = {
-  deps: Exclude<AllKeys, Self>[];
-  run: (deps: Record<any, any>) => any;
-};
-
-type ExtractRunTypes<T> = {
-  [K in keyof T]: T[K] extends { run: (...args: any[]) => infer R } ? R : never;
-};
-
-export function defineDepGraph<
-  T extends {
-    [K in keyof T]: {
-      deps: Exclude<keyof T, K>[];
-      run: (deps: {
-        [D in T[K]["deps"][number]]: () => ExtractRunTypes<T[D]>;
-      }) => any;
-    };
-  }
->(graph: T): T {
-  return graph;
-}
-
-const steps = defineDepGraph({
-  a: { deps: ["b"], run: (deps) => Effect.succeed(1) },
-  b: { deps: ["a"], run: (deps) => Effect.succeed(2) },
-});
+import { FightService } from "./fight.ts";
 
 export class Mission extends Effect.Service<Mission>()("Mission", {
   effect: Effect.gen(function* () {
-    const { display, newLine, choice, clearScreen, displayYield } =
-      yield* Display;
+    const { display, newLine, choice, displayYield } = yield* Display;
+
+    const player = yield* Player;
 
     const random = yield* DeterministicRandom;
+
+    const { fight } = yield* FightService;
 
     const mushroomMission = seqDiscard(
       displayYield(
@@ -53,7 +29,7 @@ export class Mission extends Effect.Service<Mission>()("Mission", {
           ...for 5 minutes`,
           onFalse: () =>
             display`You got unlucky, you feel sick and you die`.pipe(
-              Effect.zip(Player.dieOfPoison("mushroom"))
+              Effect.zip(player.dieOfPoison("mushroom"))
             ),
         })
       )
@@ -72,9 +48,9 @@ export class Mission extends Effect.Service<Mission>()("Mission", {
         )
       ),
       newLine,
-      Player.rightHand.pipe(
+      player.rightHand.pipe(
         Effect.flatten,
-        Effect.orElse(() => Player.leftHand.pipe(Effect.flatten)),
+        Effect.orElse(() => player.leftHand.pipe(Effect.flatten)),
         Effect.orElseSucceed(() => "hand"),
         Effect.tap((weapon) =>
           displayYield(
@@ -114,13 +90,13 @@ export class Mission extends Effect.Service<Mission>()("Mission", {
                     `${gold} gold`
                   )}`
               ),
-              Effect.tap((gold) => Player.updateGold((g) => g + gold))
+              Effect.tap((gold) => player.updateGold((g) => g + gold))
             ),
           onFalse: () =>
             display`You got unlucky, the frog jumps away and steals ${k.red(
               "1 gold"
             )} from you`.pipe(
-              Effect.zipRight(Player.updateGold((g) => (g > 0 ? g - 1 : 0)))
+              Effect.zipRight(player.updateGold((g) => (g > 0 ? g - 1 : 0)))
             ),
         })
       )
@@ -162,11 +138,7 @@ export class Mission extends Effect.Service<Mission>()("Mission", {
       campfireMission,
     ];
 
-    const randomMission: Effect.Effect<
-      void,
-      PlayerDeadException,
-      Player | Display
-    > = Effect.gen(function* () {
+    const randomMission = Effect.gen(function* () {
       yield* display`You are on a mission`;
 
       const mission = yield* random.choice(missions);
@@ -178,5 +150,10 @@ export class Mission extends Effect.Service<Mission>()("Mission", {
       randomMission,
     };
   }),
-  dependencies: [Display.Default],
+  dependencies: [
+    Display.Default,
+    Player.Default,
+    FightService.Default,
+    DeterministicRandom.Default,
+  ],
 }) {}

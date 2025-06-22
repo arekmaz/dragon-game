@@ -7,6 +7,7 @@ import {
   Logger,
   LogLevel,
   Data,
+  Layer,
 } from "effect";
 import {
   EqItemSchema,
@@ -26,7 +27,6 @@ import { Armorsmith } from "./game/armorsmith.ts";
 import { FileSystem } from "@effect/platform";
 import { NodeFileSystem } from "@effect/platform-node";
 import { seqDiscard } from "./effectHelpers.ts";
-import { DeterministicRandom } from "./DeterministicRandom.ts";
 import { Mission } from "./game/mission.ts";
 
 class GameData extends Schema.Class<GameData>("GameData")({
@@ -101,7 +101,7 @@ export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
 
     return { saveGame, loadGame };
   }),
-  dependencies: [NodeFileSystem.layer],
+  dependencies: [NodeFileSystem.layer, Bank.Default, Player.Default],
   accessors: true,
 }) {}
 
@@ -111,6 +111,7 @@ const game: Effect.Effect<
   TownSquare | Player | Display | SaveGame
 > = Effect.gen(function* () {
   const { display, newLine, clearScreen, displayYield } = yield* Display;
+  const player = yield* Player;
 
   const townSquareService = yield* TownSquare;
 
@@ -121,11 +122,21 @@ const game: Effect.Effect<
   yield* townSquareService.intro;
   yield* townSquareService.townSquare.pipe(
     Effect.catchTags({
-      PlayerDeadException: () =>
+      PlayerDeadPoisonException: (e) =>
         Effect.gen(function* () {
-          yield* Player.updateGold(() => 0);
-          const maxHealth = yield* Player.getMaxHealth;
-          yield* Player.updateHealth(() => maxHealth);
+          yield* player.updateGold(() => 0);
+          const maxHealth = yield* player.getMaxHealth;
+          yield* player.updateHealth(() => maxHealth);
+          yield* displayYield`You died by ${e.data.type} poisoning, you lost your gold, the game will restart`;
+          yield* newLine;
+
+          yield* game;
+        }),
+      PlayerDeadDamageException: () =>
+        Effect.gen(function* () {
+          yield* player.updateGold(() => 0);
+          const maxHealth = yield* player.getMaxHealth;
+          yield* player.updateHealth(() => maxHealth);
           yield* displayYield`You died, you lost your gold, the game will restart`;
           yield* newLine;
 
@@ -227,23 +238,26 @@ const gameSetup: Effect.Effect<
   );
 });
 
+const GameLive = Layer.mergeAll(
+  TownSquare.Default,
+  Forest.Default,
+  Mission.Default,
+  Healer.Default,
+  Inn.Default,
+  Weaponsmith.Default,
+  Armorsmith.Default,
+  SaveGame.Default,
+  Bank.Default,
+  Player.Default,
+  Display.Default
+);
+
 export const runGame = seqDiscard(
   Display.use((s) => s.clearScreen),
   gameSetup,
   game
 ).pipe(
   Effect.asVoid,
-  Effect.provide(TownSquare.Default),
-  Effect.provide(Forest.Default),
-  Effect.provide(Mission.Default),
-  Effect.provide(DeterministicRandom.Default),
-  Effect.provide(Healer.Default),
-  Effect.provide(Inn.Default),
-  Effect.provide(Weaponsmith.Default),
-  Effect.provide(Armorsmith.Default),
-  Effect.provide(SaveGame.Default),
-  Effect.provide(Bank.Default),
-  Effect.provide(Player.Default),
-  Effect.provide(Display.Default),
+  Effect.provide(GameLive),
   Logger.withMinimumLogLevel(LogLevel.Debug)
 );
