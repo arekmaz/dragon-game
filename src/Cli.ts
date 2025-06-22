@@ -10,8 +10,10 @@ const command = Command.make(
   Effect.fn("dragon-game")(function* ({ debug }) {
     return yield* Effect.gen(function* () {
       if (debug) {
-        yield* Effect.logDebug("Debug mode enabled");
+        yield* Effect.logDebug("Starting game in debug mode");
+        yield* Effect.sleep(2000);
       }
+
       return yield* Layer.launch(GameCmd.Default);
     }).pipe(Logger.withMinimumLogLevel(debug ? LogLevel.Debug : LogLevel.Info));
   })
