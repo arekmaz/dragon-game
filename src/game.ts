@@ -156,10 +156,16 @@ export class Game extends Effect.Service<Game>()("Game", {
   ],
 }) {}
 
-const GameLive = Layer.mergeAll(Game.Default, Display.Default);
+export class GameCmd extends Effect.Service<GameCmd>()("GameCmd", {
+  effect: Effect.gen(function* () {
+    const { clearScreen } = yield* Display;
+    const { gameSetup, game } = yield* Game;
 
-export const runGame = seqDiscard(
-  Display.use((s) => s.clearScreen),
-  Game.use((s) => s.gameSetup),
-  Game.use((s) => s.game)
-).pipe(Effect.provide(GameLive), Logger.withMinimumLogLevel(LogLevel.Debug));
+    yield* clearScreen;
+    yield* gameSetup;
+    yield* game;
+
+    return {};
+  }),
+  dependencies: [Display.Default, Game.Default],
+}) {}
