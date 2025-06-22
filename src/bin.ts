@@ -7,5 +7,5 @@ import { run } from "./Cli.ts";
 
 run(process.argv).pipe(
   Effect.provide(NodeContext.layer),
-  NodeRuntime.runMain({ disableErrorReporting: false })
+  NodeRuntime.runMain({ disableErrorReporting: true })
 );

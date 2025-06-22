@@ -42,13 +42,11 @@ export class Display extends Effect.Service<Display>()("Display", {
       s: string | TemplateStringsArray,
       ...args: any[]
     ) {
-      return Effect.orDie(
-        Effect.gen(function* () {
-          yield* terminal.display(
-            k.green(globalThis.String.raw({ raw: s }, ...args))
-          );
-        })
-      );
+      return Effect.gen(function* () {
+        yield* terminal.display(
+          k.green(globalThis.String.raw({ raw: s }, ...args))
+        );
+      }).pipe(Effect.ignore);
     };
 
     const display = function (
@@ -62,40 +60,32 @@ export class Display extends Effect.Service<Display>()("Display", {
       s?: string | TemplateStringsArray,
       ...args: any[]
     ) {
-      return Effect.orDie(
-        Effect.gen(function* () {
-          if (s !== undefined) {
-            yield* display(s, ...args);
+      return Effect.gen(function* () {
+        if (s !== undefined) {
+          yield* display(s, ...args);
+        }
+
+        yield* displayRaw(`Press <ENTER> to continue`);
+
+        while (true) {
+          const input = yield* terminal.readInput;
+
+          if (input.key.name === "return") {
+            break;
           }
-
-          yield* displayRaw(`Press <ENTER> to continue`);
-
-          while (true) {
-            const input = yield* terminal.readInput;
-
-            if (input.key.name === "return") {
-              break;
-            }
-          }
-        })
-      );
+        }
+      }).pipe(Effect.ignore);
     };
 
     const newLine = display``;
 
-    type Values<T> = T[keyof T];
-
-    const choice = <C extends Record<string, Effect.Effect<any, any, any>>>(
-      choices: C,
+    const choice = <A, E, R, K extends string>(
+      choices: Record<K, Effect.Effect<A, E, R>>,
       opts: {
-        defaultOption?: keyof C & string;
+        defaultOption?: NoInfer<K>;
         promptPrefix?: string;
       } = {}
-    ): Effect.Effect<
-      Effect.Effect.Success<Values<C>>,
-      Effect.Effect.Error<Values<C>>,
-      Effect.Effect.Context<Values<C>>
-    > =>
+    ) =>
       Effect.gen(function* () {
         let input: string = "";
 
@@ -114,7 +104,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 
         while (!(input in choices)) {
           yield* prompt;
-          input = (yield* terminal.readInput).key.name.toLowerCase();
+
+          input = yield* terminal.readInput.pipe(
+            Effect.map((a) => a.key.name.toLowerCase()),
+            Effect.orElseSucceed(() => "")
+          );
 
           if (input === "return") {
             input = opts.defaultOption ?? "";
@@ -130,7 +124,7 @@ export class Display extends Effect.Service<Display>()("Display", {
         yield* displayRaw`${opts.defaultOption ? " " : ""}${input} `;
         yield* newLine;
 
-        const result = yield* choices[input];
+        const result = yield* choices[input as K];
 
         return result;
       });
@@ -146,7 +140,7 @@ export class Display extends Effect.Service<Display>()("Display", {
             String.concat(EOL),
             color,
             terminal.display,
-            Effect.orDie
+            Effect.ignore
           )
         )
       );

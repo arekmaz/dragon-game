@@ -43,7 +43,9 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
         (o) => o.minLevel <= lvl
       );
 
-      return yield* Effect.orDie(Random.choice(opponentsMatchingPlayerLevel));
+      return yield* Random.choice(opponentsMatchingPlayerLevel).pipe(
+        Effect.orDie
+      );
     });
 
     const forest: Effect.Effect<
