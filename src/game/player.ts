@@ -1,6 +1,6 @@
 import { Data, Effect, Option, pipe, Ref, Schema, String } from "effect";
 import { Display, k } from "./display.ts";
-import { WeaponSchema } from "./weaponsmith.ts";
+import { WeaponSchema } from "./weapons.ts";
 
 export const playerClasses = ["mage", "assassin", "warrior", "archer"] as const;
 export type PlayerClass = (typeof playerClasses)[number];

@@ -1,7 +1,7 @@
 import { Effect, Random, Ref, Option } from "effect";
 import { Display, k } from "./display.ts";
 import { Player, PlayerDeadDamageException } from "./player.ts";
-import { weapons } from "./weaponsmith.ts";
+import { weapons } from "./weapons.ts";
 import { seqDiscard } from "../effectHelpers.ts";
 
 export class FightService extends Effect.Service<FightService>()(

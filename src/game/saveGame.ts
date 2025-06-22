@@ -4,7 +4,7 @@ import { FileSystem } from "@effect/platform";
 import { Data, Effect, ParseResult, Ref, Schema } from "effect";
 import { Bank } from "./bank.ts";
 import { EqItemSchema, Player, PlayerData } from "./player.ts";
-import { WeaponSchema } from "./weaponsmith.ts";
+import { WeaponSchema } from "./weapons.ts";
 
 class GameData extends Schema.Class<GameData>("GameData")({
   player: PlayerData,

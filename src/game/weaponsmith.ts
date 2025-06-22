@@ -1,25 +1,8 @@
-import { Effect, pipe, String, Record, Schema, Option, Data } from "effect";
+import { Data, Effect, Option, pipe, Record, String } from "effect";
+import { seqDiscard } from "../effectHelpers.ts";
 import { Display, k } from "./display.ts";
 import { EqItemSchema, Player } from "./player.ts";
-import { seqDiscard } from "../effectHelpers.ts";
-
-export const weapons = {
-  stick: 2,
-  dagger: 5,
-  sword: 10,
-  axe: 15,
-  mace: 20,
-
-  greatsword: 30,
-  halberd: 35,
-  greatmace: 40,
-  greataxe: 45,
-  greathalberd: 60,
-};
-
-export const WeaponSchema = Schema.Literal(...Record.keys(weapons));
-
-export type Weapon = keyof typeof weapons;
+import { Weapon, weapons } from "./weapons.ts";
 
 const weaponMinLevel: Record<Weapon, number> = {
   stick: 1,
