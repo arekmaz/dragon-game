@@ -18,12 +18,12 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
     const { fight } = yield* FightService;
 
-    const randomMission = yield* Random.choice([
+    const randomMission = Random.choice([
       mission.randomMission,
       Effect.void,
       Effect.void,
       Effect.void,
-    ]).pipe(Effect.orDie);
+    ]).pipe(Effect.orDie, Effect.flatten);
 
     const intro = seqDiscard(
       display`You arrive at the deep dark forest`,
@@ -33,8 +33,7 @@ export class Forest extends Effect.Service<Forest>()("Forest", {
 
     const forestBackMsg = seqDiscard(
       display`You are back at the forest`,
-      newLine,
-      randomMission
+      newLine
     );
 
     const randomOpponent = Effect.gen(function* () {

@@ -74,7 +74,7 @@ export class Display extends Effect.Service<Display>()("Display", {
             break;
           }
         }
-      }).pipe(Effect.ignore);
+      }).pipe(Effect.orDie);
     };
 
     const newLine = display``;
