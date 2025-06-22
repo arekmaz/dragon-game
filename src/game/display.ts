@@ -3,6 +3,7 @@ import { Array, Effect, pipe, Record, String } from "effect";
 import { EOL } from "node:os";
 
 import k from "kleur";
+import { NodeTerminal } from "@effect/platform-node";
 
 export { k };
 
@@ -187,4 +188,6 @@ export class Display extends Effect.Service<Display>()("Display", {
       bed,
     };
   }),
+
+  dependencies: [NodeTerminal.layer],
 }) {}

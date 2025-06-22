@@ -1,5 +1,5 @@
 import { FileSystem, Terminal } from "@effect/platform";
-import { NodeFileSystem } from "@effect/platform-node";
+import { NodeFileSystem, NodeTerminal } from "@effect/platform-node";
 import {
   Data,
   Effect,
@@ -80,8 +80,6 @@ export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
 
     const loadGame = (fileName: string = defaultSaveFile) =>
       Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem;
-
         const gameData = yield* fs.readFileString(fileName).pipe(
           Effect.flatMap(Schema.decode(JsonGameData)),
           Effect.tapErrorTag("ParseError", (e) =>
@@ -95,107 +93,112 @@ export class SaveGame extends Effect.Service<SaveGame>()("SaveGame", {
 
     return { saveGame, loadGame };
   }),
-  dependencies: [NodeFileSystem.layer, Bank.Default, Player.Default],
+  dependencies: [
+    NodeFileSystem.layer,
+    Bank.Default,
+    Player.Default,
+    NodeTerminal.layer,
+  ],
 }) {}
 
-const game: Effect.Effect<
-  void,
-  never,
-  TownSquare | Player | Display | SaveGame
-> = Effect.gen(function* () {
-  const { display, newLine, clearScreen, displayYield } = yield* Display;
-  const player = yield* Player;
+export class Game extends Effect.Service<Game>()("Game", {
+  effect: Effect.gen(function* () {
+    const { display, newLine, choice, displayYield, clearScreen } =
+      yield* Display;
 
-  const townSquareService = yield* TownSquare;
+    const saveGame = yield* SaveGame;
 
-  yield* clearScreen;
-  yield* display`Game started`;
-  yield* newLine;
+    const terminal = yield* Terminal.Terminal;
+    const player = yield* Player;
 
-  yield* townSquareService.intro;
-  yield* townSquareService.townSquare.pipe(
-    Effect.catchTags({
-      PlayerDeadPoisonException: (e) =>
-        Effect.gen(function* () {
-          yield* player.updateGold(() => 0);
-          const maxHealth = yield* player.getMaxHealth;
-          yield* player.updateHealth(() => maxHealth);
-          yield* displayYield`You died by ${e.type} poisoning, you lost your gold, the game will restart`;
-          yield* newLine;
+    const townSquareService = yield* TownSquare;
 
-          yield* game;
-        }),
-      PlayerDeadDamageException: () =>
-        Effect.gen(function* () {
-          yield* player.updateGold(() => 0);
-          const maxHealth = yield* player.getMaxHealth;
-          yield* player.updateHealth(() => maxHealth);
-          yield* displayYield`You died, you lost your gold, the game will restart`;
-          yield* newLine;
+    const game: Effect.Effect<void, never, never> = Effect.gen(function* () {
+      yield* clearScreen;
+      yield* display`Game started`;
+      yield* newLine;
 
-          yield* game;
-        }),
-    })
-  );
-});
+      yield* townSquareService.intro;
+      yield* townSquareService.townSquare.pipe(
+        Effect.catchTags({
+          PlayerDeadPoisonException: (e) =>
+            Effect.gen(function* () {
+              yield* player.updateGold(() => 0);
+              const maxHealth = yield* player.getMaxHealth;
+              yield* player.updateHealth(() => maxHealth);
+              yield* displayYield`You died by ${e.type} poisoning, you lost your gold, the game will restart`;
+              yield* newLine;
 
-const gameSetup: Effect.Effect<
-  void,
-  never,
-  SaveGame | FileSystem.FileSystem | Player | Display | Terminal.Terminal
-> = Effect.gen(function* () {
-  const { display, newLine, choice, displayYield } = yield* Display;
+              yield* game;
+            }),
+          PlayerDeadDamageException: () =>
+            Effect.gen(function* () {
+              yield* player.updateGold(() => 0);
+              const maxHealth = yield* player.getMaxHealth;
+              yield* player.updateHealth(() => maxHealth);
+              yield* displayYield`You died, you lost your gold, the game will restart`;
+              yield* newLine;
 
-  const saveGame = yield* SaveGame;
+              yield* game;
+            }),
+        })
+      );
+    });
 
-  const terminal = yield* Terminal.Terminal;
-  const player = yield* Player;
+    const gameSetup: Effect.Effect<void, never, never> = Effect.gen(
+      function* () {
+        yield* display`Welcome to the dragon game`;
+        yield* newLine;
 
-  yield* display`Welcome to the dragon game`;
-  yield* newLine;
-
-  yield* display`Would you like to configure your character or quickly start the game?
+        yield* display`Would you like to configure your character or quickly start the game?
   [L] load saved game
   [C] configure
   [R] random`;
 
-  yield* choice(
-    {
-      l: Effect.gen(function* () {
-        yield* saveGame.loadGame().pipe(
-          Effect.tapError(Effect.logDebug),
-          Effect.tapError((error) =>
-            seqDiscard(
-              newLine,
-              display(k.red(`Game loading failed...`)),
-              newLine
-            )
-          ),
-          Effect.orElse(() => gameSetup),
-          Effect.zipRight(player.stats),
-          Effect.zipRight(displayYield())
-        );
-      }),
-      c: Effect.gen(function* () {
-        yield* display`What's your name?`;
+        yield* choice(
+          {
+            l: Effect.gen(function* () {
+              yield* saveGame.loadGame().pipe(
+                Effect.tapError(Effect.logDebug),
+                Effect.tapError(() =>
+                  seqDiscard(
+                    newLine,
+                    display(k.red(`Game loading failed...`)),
+                    newLine
+                  )
+                ),
+                Effect.orElse(() => gameSetup),
+                Effect.zipRight(player.stats),
+                Effect.zipRight(displayYield())
+              );
+            }),
+            c: Effect.gen(function* () {
+              yield* display`What's your name?`;
 
-        const readName: Effect.Effect<string, never, Terminal.Terminal> =
-          terminal.readLine.pipe(
-            Effect.flatMap(
-              Schema.decode(
-                Schema.Trim.pipe(Schema.nonEmptyString(), Schema.maxLength(100))
-              )
-            ),
-            Effect.tapError(() => display`Your name cannot be empty`),
-            Effect.orElse(() => readName)
-          );
+              const readName: Effect.Effect<string, never, never> =
+                terminal.readLine.pipe(
+                  Effect.flatMap(
+                    Schema.decode(
+                      Schema.Trim.pipe(
+                        Schema.nonEmptyString(),
+                        Schema.maxLength(100)
+                      )
+                    )
+                  ),
+                  Effect.tapError(() => display`Your name cannot be empty`),
+                  Effect.orElse(() => readName)
+                );
 
-        const userName = yield* readName;
-        yield* Ref.update(player.data, (data) => ({ ...data, name: userName }));
+              const userName = yield* readName;
 
-        yield* newLine;
+              yield* Ref.update(player.data, (data) => ({
+                ...data,
+                name: userName,
+              }));
 
-        yield* display`
+              yield* newLine;
+
+              yield* display`
           Hello, ${userName}!
 
           What is your class?
@@ -205,47 +208,54 @@ const gameSetup: Effect.Effect<
             [R] archer
         `;
 
-        const setPlayerClass = (c: PlayerClass) =>
-          Ref.update(player.data, (data) => ({
-            ...data,
-            class: c,
-          }));
+              const setPlayerClass = (c: PlayerClass) =>
+                Ref.update(player.data, (data) => ({
+                  ...data,
+                  class: c,
+                }));
 
-        yield* choice({
-          m: setPlayerClass("mage"),
-          a: setPlayerClass("assassin"),
-          w: setPlayerClass("warrior"),
-          r: setPlayerClass("archer"),
-        });
-      }),
-      r: Effect.gen(function* () {
-        yield* Ref.update(player.data, (data) => ({
-          ...data,
-          name: "random-name",
-          class:
-            playerClasses[Math.floor(Math.random() * playerClasses.length)],
-        }));
-        yield* player.stats;
-        yield* displayYield();
-      }),
-    },
-    { defaultOption: "r" }
-  );
-});
+              yield* choice({
+                m: setPlayerClass("mage"),
+                a: setPlayerClass("assassin"),
+                w: setPlayerClass("warrior"),
+                r: setPlayerClass("archer"),
+              });
+            }),
+            r: Effect.gen(function* () {
+              yield* Ref.update(player.data, (data) => ({
+                ...data,
+                name: "random-name",
+                class:
+                  playerClasses[
+                    Math.floor(Math.random() * playerClasses.length)
+                  ],
+              }));
+              yield* player.stats;
+              yield* displayYield();
+            }),
+          },
+          { defaultOption: "r" }
+        );
+      }
+    );
 
-const GameLive = Layer.mergeAll(
-  TownSquare.Default,
-  SaveGame.Default,
-  Player.Default,
-  Display.Default
-);
+    return { game, gameSetup };
+  }),
+  dependencies: [
+    TownSquare.Default,
+    SaveGame.Default,
+    Player.Default,
+    Display.Default,
+    NodeTerminal.layer,
+  ],
+}) {}
 
 export const runGame = seqDiscard(
   Display.use((s) => s.clearScreen),
-  gameSetup,
-  game
+  Game.use((s) => s.gameSetup),
+  Game.use((s) => s.game)
 ).pipe(
   Effect.asVoid,
-  Effect.provide(GameLive),
+  Effect.provide(Layer.mergeAll(Game.Default, Display.Default)),
   Logger.withMinimumLogLevel(LogLevel.Debug)
 );
